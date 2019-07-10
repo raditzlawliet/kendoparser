@@ -138,8 +138,23 @@ kendoFilter.RegisterOperatorAll("between", betOp)
 ```
 
 ### Transforming filter
-Need modify your field? lowercase all field before processing? don't worry, you can use Transform to modify and apply to your all field
+Need modify your field? lowercase all field before processing? don't worry, you can use Transform to modify and apply to your all field. See [kendo_test.go](kendo_test.go)) for more uses
 ```go
+kendoFilter := KendoFilter{}
+
+// transform filter field or all field in filters into lower case
+kendoFilter.TransformField(strings.ToLower) // only current filter
+kendoFilter.TransformFieldAll(strings.ToLower) // include filters
+
+// custom transform include value (if needed), it use pointer KendoFilter, so you can direct modify. No need to return
+transformIDMongo := func(kf *KendoFilter) {
+    if kf.Field == "id" {
+        kf.Field = "_id"
+    }
+}
+kendoFilter.Transform(transformIDMongo) // only current filter
+kendoFilter.TransformAll(transformIDMongo) // include filters
+
 ```
 
 ## Contribute
