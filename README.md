@@ -28,18 +28,20 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 Easy to use like title said
 
 ### To eaciit/dbox filter
+#### JSON Sample
 ```json
 {
-    data: {
-        filter: {
-            field: "id",
-            operator: "eq",
-            value: "val"
+    "data": {
+        "filter": {
+            "field": "id",
+            "operator": "eq",
+            "value": "val",
         }
     }
 }
 ```
 
+#### GO Implementation 
 ```go
 // just for information
 // you can use gorilla mux or knot
@@ -53,19 +55,77 @@ k.GetPayload(payload)
 payload := KendoRequest {
     Data: KendoData{
         Filter: KendoFilter{
-            Field: "id", Operator: "eq", Value: "val",
+            Field: "_id", Operator: "eq", Value: "val"
         },
     },
 }
 
-resultFilter := payload.Data.ToDboxFilter()
+resultFilter := payload.Data.ToDboxFilter() 
+// dbox.Eq("_id", "val")
+```
+
+#### More JSON
+```json
+{
+    "data": {
+        "filters": [
+            {
+                "filter": {
+                    "field": "id",
+                    "operator": "eq",
+                    "value": "val",
+                }
+            },
+            {
+                "filter": {
+                    "field": "abc",
+                    "operator": "in",
+                    "values": ["a", "b"],
+                }
+            }
+        ],
+        "logic": "and"
+    }
+}
+```
+```go
+// just for information
+// you can use gorilla mux or knot
+var k = k *knot.WebContext
+
+// retrieve payload
+payload := &KendoRequest{}
+k.GetPayload(payload)
+
+// Usually payload the struct will be this
+payload := KendoRequest {
+    Data: KendoData{
+        Filter: KendoFilter{
+            Filters: []KendoFilter{
+                Filter: KendoFilter{
+                    Field: "_id", Operator: "eq", Value: "val"
+                },
+                Filter: KendoFilter{
+                    Field: "abc", Operator: "in", Values: []interface{}{"a", "b"}
+                },
+            }
+        },
+    },
+}
+
+resultFilter := payload.Data.ToDboxFilter() 
+// dbox.And(
+//     dbox.Eq("_id", "val"),
+//     dbox.In("abc", []interface{}{"a", "b"}...),
+// )
 ```
 
 ### To eaciit/dbox aggregation filter (return eaciit/toolkit/M)
 Same like previously one
 
 ```go
-resultFilter := payload.Data.ToAggregationFilter()
+resultFilter := payload.Data.ToAggregationFilter() 
+// tk.M{"$and": []tk.M{tk.M{"_id": tk.M{"$eq": "val"}}}}
 
 ```
 
@@ -165,3 +225,4 @@ MIT License
 
 ## Author and Contributor
 Radityo
+
