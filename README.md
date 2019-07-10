@@ -1,3 +1,7 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/raditzlawliet/gokendoparser)](https://goreportcard.com/report/github.com/raditzlawliet/gokendoparser)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/raditzlawliet/gokendoparser/issues)
+[![codecov](https://codecov.io/gh/raditzlawliet/gokendoparser/branch/master/graph/badge.svg)](https://codecov.io/gh/raditzlawliet/gokendoparser)
+
 # Go Kendo Parser
 Your Golang Kendo parser, parsing Kendo data source request to golang struct immediately to eaciit/dbox filter or aggregate filter for **Mongo DB Driver**. Available parser to
 - [eaciit/dbox Filter](https://github.com/eaciit/dbox)
