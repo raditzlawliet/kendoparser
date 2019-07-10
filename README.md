@@ -15,8 +15,9 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - ~~Basic Operator~~
 - ~~Dbox filter & aggregate support for Mongo DB Driver~~
 - Extendable & hookable filter (global / struct only)
-- Extendable & hookable operator handler
+- ~~Extendable & hookable operator handler~~
 - Extendable & hookable database driver (MySQL, SQL, Oracle)
+- Parser Sort
 
 ## Current Limitation!
 - Only working for eaciit/dbox package
