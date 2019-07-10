@@ -14,10 +14,11 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - ~~Convert kendo datasource request into go struct~~
 - ~~Basic Operator~~
 - ~~Dbox filter & aggregate support for Mongo DB Driver~~
-- Extendable & hookable filter (global / struct only)
+- ~~Transform filter~~
 - ~~Extendable & hookable operator handler~~
-- Extendable & hookable database driver (MySQL, SQL, Oracle)
+- ~~local scope operator~~
 - Parser Sort
+- Extendable & hookable database driver (MySQL, SQL, Oracle)
 
 ## Current Limitation!
 - Only working for eaciit/dbox package
@@ -121,6 +122,24 @@ RegisterOperator("between", betOp)
 
 // overwrite Default Operator
 SetDefaultOperator(betOp)
+```
+
+#### Local scope Operator
+You also can defined local scope only operator, just use the struct and register like global scope. It support nested or not
+```go
+betOp := BetweenOperator{}
+kendoFilter := KendoFilter{}
+
+// register operator in it struct only
+kendoFilter.RegisterOperator("between", betOp)
+
+// register operator in it struct and all child filters
+kendoFilter.RegisterOperatorAll("between", betOp)
+```
+
+### Transforming filter
+Need modify your field? lowercase all field before processing? don't worry, you can use Transform to modify and apply to your all field
+```go
 ```
 
 ## Contribute

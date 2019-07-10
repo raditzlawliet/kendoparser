@@ -35,32 +35,41 @@ type KendoSort struct {
 
 // KendoFilter struct filters
 type KendoFilter struct {
-	Filters    []KendoFilter `json:"filters"`
-	Logic      string        `json:"logic"`
-	Field      string        `json:"field"`
-	Operator   string        `json:"operator"`
-	IgnoreCase bool          `json:"ignoreCase"`
-	Value      string        `json:"value"`
-	Values     []interface{} `json:"values"`
+	Filters             []KendoFilter `json:"filters"`
+	Logic               string        `json:"logic"`
+	Field               string        `json:"field"`
+	Operator            string        `json:"operator"`
+	IgnoreCase          bool          `json:"ignoreCase"`
+	Value               string        `json:"value"`
+	Values              []interface{} `json:"values"`
+	registeredOperators map[string]Operator
 }
 
 // ToDboxFilter convert KendoFilter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func (kFilter *KendoFilter) ToDboxFilter() *dbox.Filter {
+func (kf *KendoFilter) ToDboxFilter() *dbox.Filter {
 	// single filter
-	if len(kFilter.Filters) == 0 {
+	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
-		ckFilter := *kFilter
+		ckFilter := *kf
 
-		if opHandler, ok := RegisteredOperators[kFilter.Operator]; ok {
+		// local scope operator
+		if kf.registeredOperators != nil {
+			if opHandler, ok := kf.registeredOperators[kf.Operator]; ok && opHandler != nil {
+				return opHandler.ToDboxFilter(ckFilter)
+			}
+		}
+
+		if opHandler, ok := RegisteredOperators[kf.Operator]; ok {
 			return opHandler.ToDboxFilter(ckFilter)
 		}
+
 		return DefaultOperator.ToDboxFilter(ckFilter)
 	}
 
 	// so filters has some values
 	dboxFilters := []*dbox.Filter{}
-	for _, kFilterChild := range kFilter.Filters {
+	for _, kFilterChild := range kf.Filters {
 		dboxFilter := kFilterChild.ToDboxFilter()
 		if dboxFilter != nil {
 			dboxFilters = append(dboxFilters, dboxFilter)
@@ -68,7 +77,7 @@ func (kFilter *KendoFilter) ToDboxFilter() *dbox.Filter {
 	}
 
 	if len(dboxFilters) > 0 {
-		if strings.ToLower(kFilter.Logic) == "and" {
+		if strings.ToLower(kf.Logic) == "and" {
 			return dbox.And(dboxFilters...)
 		}
 		return dbox.Or(dboxFilters...)
@@ -79,11 +88,20 @@ func (kFilter *KendoFilter) ToDboxFilter() *dbox.Filter {
 
 // ToAggregationFilter convert KendoFilter into M for pipe combination automaticly
 // return can @Nullable if filter and filters empty
-func (kFilter *KendoFilter) ToAggregationFilter() toolkit.M {
+func (kf *KendoFilter) ToAggregationFilter() toolkit.M {
 	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
-	if len(kFilter.Filters) == 0 {
-		ckFilter := *kFilter
-		if opHandler, ok := RegisteredOperators[kFilter.Operator]; ok {
+	if len(kf.Filters) == 0 {
+		// processing will use copy instead to avoid change original value
+		ckFilter := *kf
+
+		// local scope operator
+		if kf.registeredOperators != nil {
+			if opHandler, ok := kf.registeredOperators[kf.Operator]; ok && opHandler != nil {
+				return opHandler.ToAggregationFilter(ckFilter)
+			}
+		}
+
+		if opHandler, ok := RegisteredOperators[kf.Operator]; ok {
 			return opHandler.ToAggregationFilter(ckFilter)
 		}
 		return DefaultOperator.ToAggregationFilter(ckFilter)
@@ -91,7 +109,7 @@ func (kFilter *KendoFilter) ToAggregationFilter() toolkit.M {
 
 	// so filters has some values
 	filters := []toolkit.M{}
-	for _, kFilterChild := range kFilter.Filters {
+	for _, kFilterChild := range kf.Filters {
 		filter := kFilterChild.ToAggregationFilter()
 		if filter != nil {
 			filters = append(filters, filter)
@@ -99,11 +117,53 @@ func (kFilter *KendoFilter) ToAggregationFilter() toolkit.M {
 	}
 
 	if len(filters) > 0 {
-		if strings.ToLower(kFilter.Logic) == "and" {
+		if strings.ToLower(kf.Logic) == "and" {
 			return toolkit.M{"$and": filters}
 		}
 		return toolkit.M{"$or": filters}
 	}
 
 	return nil
+}
+
+// Transform your filter
+func (kf *KendoFilter) Transform(t func(*KendoFilter)) {
+	t(kf)
+}
+
+// TransformField only transform field
+func (kf *KendoFilter) TransformField(t func(string) string) {
+	kf.Field = t(kf.Field)
+}
+
+// TransformAll your filter include all childs
+func (kf *KendoFilter) TransformAll(t func(*KendoFilter)) {
+	for i := range kf.Filters {
+		kf.Filters[i].TransformAll(t)
+	}
+	kf.Transform(t)
+}
+
+// TransformAllField only transform field include all childs
+func (kf *KendoFilter) TransformAllField(t func(string) string) {
+	for i := range kf.Filters {
+		kf.Filters[i].TransformAllField(t)
+	}
+	kf.TransformField(t)
+}
+
+// RegisterOperator register operator local scope
+func (kf *KendoFilter) RegisterOperator(op string, f Operator) {
+	if kf.registeredOperators == nil {
+		kf.registeredOperators = map[string]Operator{}
+	}
+	kf.registeredOperators[op] = f
+}
+
+// RegisterOperatorAll register operator local scope include childs
+func (kf *KendoFilter) RegisterOperatorAll(op string, f Operator) {
+	for i := range kf.Filters {
+		kf.Filters[i].RegisterOperatorAll(op, f)
+	}
+	kf.RegisterOperator(op, f)
 }
