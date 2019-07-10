@@ -57,33 +57,70 @@ payload := KendoRequest {
     },
 }
 
-resultFilter := payload.Data.ToDboxFilter(func(s *string, filter *KendoFilter) *dbox.Filter {
-    // extra function if you wish to modify the field it will loop each filter
-    // Nullable / you can pass nil
-    if *s == "id" {
-        *s = "_id"
-    }
-    return nil
-})
+resultFilter := payload.Data.ToDboxFilter()
 ```
 
 ### To eaciit/dbox aggregation filter (return eaciit/toolkit/M)
 Same like previously one
 
 ```go
-resultFilter := payload.Data.ToAggregationFilter(func(s *string, filter *KendoFilter) tk.M {
-    // extra function if you wish to modify the field it will loop each filter
-    // Nullable / you can pass nil
-    if *s == "id" {
-        *s = "_id"
-    }
-    return nil
-})
+resultFilter := payload.Data.ToAggregationFilter()
 
 ```
+
 ### To eaciit/dbflux filter (Coming soon)
 Same like previously one
 ```go
+```
+
+### Extend & Hook custom operator handler
+By default, package already registerd with basic operator such as 
+- Equal
+- Not Equal
+- Contain
+- Not Contain
+- In
+- Gte
+- Lte
+- Gte Date
+- Lte Date
+- Exists
+
+But if you want to add custom operator that didn't exists yet, you can register in global handler (for sample you can see [operator_between.go](operator_between.go)). You must implement all function in Operator interface (or just return nil if you dont want implement other hook)
+```go
+type Operator interface {
+	ToDboxFilter(KendoFilter) *dbox.Filter
+	ToAggregationFilter(KendoFilter) toolkit.M
+}
+```
+
+```go
+// extend struct from interface Operator, all interface func must appear
+type BetweenOperator struct {}
+
+func (BetweenOperator) ToDboxFilter(kf KendoFilter) *dbox.Filter {
+	var v0, v1 interface{}
+	if len(kf.Values) > 0 {
+		v0 = kf.Values[0]
+	}
+	if len(kf.Values) > 1 {
+		v1 = kf.Values[1]
+	}
+	return dbox.And(dbox.Gte(kf.Field, v0), dbox.Lte(kf.Field, v1))
+}
+func (BetweenOperator) ToAggregationFilter(kf KendoFilter) toolkit.M {
+    return nil // pass whatever if you dont want to implement
+    // return DefaultOperator // or pass default
+}
+```
+
+```go
+// register it 
+betOp := BetweenOperator{}
+RegisterOperator("between", betOp)
+
+// overwrite Default Operator
+SetDefaultOperator(betOp)
 ```
 
 ## Contribute

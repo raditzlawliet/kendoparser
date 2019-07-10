@@ -15,7 +15,7 @@ import (
 var RegisteredOperators = map[string]Operator{}
 
 // DefaultOperator will call if registerd not found, default operator is equa
-var DefaultOperator = EqualOp{}
+var DefaultOperator Operator = EqualOp{}
 
 var mutex = &sync.Mutex{}
 
@@ -69,6 +69,13 @@ func init() {
 func RegisterOperator(op string, f Operator) {
 	mutex.Lock()
 	RegisteredOperators[op] = f
+	mutex.Unlock()
+}
+
+//SetDefaultOperator by default, if no operator found, will use this instead
+func SetDefaultOperator(f Operator) {
+	mutex.Lock()
+	DefaultOperator = f
 	mutex.Unlock()
 }
 
