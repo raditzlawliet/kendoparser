@@ -1,21 +1,18 @@
 package gokendoparser
 
 /*
- * SCB-DMT Project Team
- * Kendo data source payload to dbox
+ * @Author
+ * Radityo <radityohernanda@gmail.com>
  */
 
 import (
-	"regexp"
 	"strings"
-	"time"
 
 	"github.com/eaciit/dbox"
-	tk "github.com/eaciit/toolkit"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/eaciit/toolkit"
 )
 
-// KendoRequest option variable to struct (each apps has different format, defined yourself if needed)
+// KendoRequest option variable to struct (each apps has different format, defined/extend yourself if needed)
 type KendoRequest struct {
 	Data KendoData `json:"data"`
 }
@@ -49,78 +46,22 @@ type KendoFilter struct {
 
 // ToDboxFilter convert KendoFilter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func (kFilter *KendoFilter) ToDboxFilter(fieldValidator func(field *string, filter *KendoFilter) *dbox.Filter) *dbox.Filter {
-	// defaultDboxFilter := &dbox.Filter{
-	// 	Field: "_id", // assume all collection always has field _id
-	// 	Op:    dbox.FilterOpEqual,
-	// 	Value: tk.M{
-	// 		"$exists": true,
-	// 	},
-	// }
-
+func (kFilter *KendoFilter) ToDboxFilter() *dbox.Filter {
+	// single filter
 	if len(kFilter.Filters) == 0 {
-		var f *dbox.Filter
-		if !tk.IsNilOrEmpty(kFilter.Operator) && !tk.IsNilOrEmpty(kFilter.Field) {
-			field := strings.ToLower(kFilter.Field)
-			if fieldValidator != nil {
-				f = fieldValidator(&field, kFilter)
-				if f != nil {
-					return f
-				}
-			}
-			switch kFilter.Operator {
-			case "eq":
-				f = dbox.Eq(field, kFilter.Value)
-			case "ne":
-				fallthrough
-			case "neq":
-				f = dbox.Ne(field, kFilter.Value)
-			case "doesnotcontain":
-				value := regexp.QuoteMeta(kFilter.Value)
-				f = &dbox.Filter{
-					Field: field,
-					Op:    dbox.FilterOpEqual, // equal are field = value and can be manipulate for others
-					Value: tk.M{"$ne": tk.M{
-						"$regex":   `` + value + ``,
-						"$options": "i",
-					}},
-				}
-			case "contain":
-				fallthrough
-			case "contains":
-				f = dbox.Contains(field, kFilter.Value)
-			case "in":
-				f = dbox.In(field, kFilter.Values...)
-			case "gte":
-				f = dbox.Gte(field, kFilter.Value)
-			case "lte":
-				f = dbox.Lte(field, kFilter.Value)
-			case "gtedate":
-				_dtVariable, _ := time.Parse(time.RFC3339, kFilter.Value)
-				f = dbox.Gte(field, _dtVariable)
-			case "ltedate":
-				_dtVariable, _ := time.Parse(time.RFC3339, kFilter.Value)
-				f = dbox.Lte(field, _dtVariable)
-			case "exists":
-				f = &dbox.Filter{
-					Field: field,
-					Op:    dbox.FilterOpEqual,
-					Value: tk.M{
-						"$exists": true,
-					},
-				}
-			default:
-				f = dbox.Eq(field, kFilter.Value)
-			}
-			return f
+		// processing will use copy instead to avoid change original value
+		ckFilter := *kFilter
+
+		if opHandler, ok := RegisteredOperators[kFilter.Operator]; ok {
+			return opHandler.ToDboxFilter(ckFilter)
 		}
-		return nil
+		return DefaultOperator.ToDboxFilter(ckFilter)
 	}
 
 	// so filters has some values
 	dboxFilters := []*dbox.Filter{}
 	for _, kFilterChild := range kFilter.Filters {
-		dboxFilter := kFilterChild.ToDboxFilter(fieldValidator)
+		dboxFilter := kFilterChild.ToDboxFilter()
 		if dboxFilter != nil {
 			dboxFilters = append(dboxFilters, dboxFilter)
 		}
@@ -138,67 +79,20 @@ func (kFilter *KendoFilter) ToDboxFilter(fieldValidator func(field *string, filt
 
 // ToAggregationFilter convert KendoFilter into M for pipe combination automaticly
 // return can @Nullable if filter and filters empty
-func (kFilter *KendoFilter) ToAggregationFilter(fieldValidator func(field *string, filter *KendoFilter) tk.M) tk.M {
-	// defaultFilter := tk.M{"_id": tk.M{"$exists": true}}
+func (kFilter *KendoFilter) ToAggregationFilter() toolkit.M {
+	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
 	if len(kFilter.Filters) == 0 {
-		var f tk.M
-		if !tk.IsNilOrEmpty(kFilter.Operator) && !tk.IsNilOrEmpty(kFilter.Field) {
-			field := strings.ToLower(kFilter.Field)
-			if fieldValidator != nil {
-				f = fieldValidator(&field, kFilter)
-				if f != nil {
-					return f
-				}
-			}
-
-			switch kFilter.Operator {
-			case "eq":
-				if kFilter.IgnoreCase {
-					value := regexp.QuoteMeta(kFilter.Value)
-					f = tk.M{field: bson.RegEx{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
-				} else {
-					f = tk.M{field: tk.M{"$eq": kFilter.Value}}
-				}
-			case "ne":
-				fallthrough
-			case "neq":
-				f = tk.M{field: tk.M{"$ne": kFilter.Value}}
-			case "doesnotcontain":
-				f = tk.M{field: tk.M{"$ne": RegexContains(kFilter.Value, kFilter.IgnoreCase)}}
-			case "contain":
-				fallthrough
-			case "contains":
-				f = tk.M{field: RegexContains(kFilter.Value, kFilter.IgnoreCase)}
-			case "in":
-				f = tk.M{field: tk.M{"$in": kFilter.Values}}
-			case "gte":
-				f = tk.M{field: tk.M{"$gte": kFilter.Value}}
-			case "lte":
-				f = tk.M{field: tk.M{"$lte": kFilter.Value}}
-			case "gtedate":
-				_dtVariable, _ := time.Parse(time.RFC3339, kFilter.Value)
-				f = tk.M{field: tk.M{"$gte": _dtVariable}}
-			case "ltedate":
-				_dtVariable, _ := time.Parse(time.RFC3339, kFilter.Value)
-				f = tk.M{field: tk.M{"$lte": _dtVariable}}
-			case "exists":
-				f = tk.M{field: tk.M{"$exists": StringToBool(kFilter.Value, false)}}
-			default:
-				if kFilter.IgnoreCase {
-					f = tk.M{field: RegexCaseInsensitive(kFilter.Value)}
-				} else {
-					f = tk.M{field: tk.M{"$eq": kFilter.Value}}
-				}
-			}
-			return f
+		ckFilter := *kFilter
+		if opHandler, ok := RegisteredOperators[kFilter.Operator]; ok {
+			return opHandler.ToAggregationFilter(ckFilter)
 		}
-		return nil
+		return DefaultOperator.ToAggregationFilter(ckFilter)
 	}
 
 	// so filters has some values
-	filters := []tk.M{}
+	filters := []toolkit.M{}
 	for _, kFilterChild := range kFilter.Filters {
-		filter := kFilterChild.ToAggregationFilter(fieldValidator)
+		filter := kFilterChild.ToAggregationFilter()
 		if filter != nil {
 			filters = append(filters, filter)
 		}
@@ -206,9 +100,9 @@ func (kFilter *KendoFilter) ToAggregationFilter(fieldValidator func(field *strin
 
 	if len(filters) > 0 {
 		if strings.ToLower(kFilter.Logic) == "and" {
-			return tk.M{"$and": filters}
+			return toolkit.M{"$and": filters}
 		}
-		return tk.M{"$or": filters}
+		return toolkit.M{"$or": filters}
 	}
 
 	return nil

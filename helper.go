@@ -11,10 +11,10 @@ import (
 // BoolToString(true, "Yes", "No") will return "Yes"
 func BoolToString(b bool, y string, n string) string {
 	if y == "" {
-		y = "Enable"
+		y = "true"
 	}
 	if n == "" {
-		n = "Disable"
+		n = "false"
 	}
 	if b {
 		return y

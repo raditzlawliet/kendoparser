@@ -18,6 +18,10 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - Extendable & hookable operator handler
 - Extendable & hookable database driver (MySQL, SQL, Oracle)
 
+## Current Limitation!
+- Only working for eaciit/dbox package
+- Only working for MongoDB
+
 ## Getting Started
 Easy to use like title said
 
@@ -88,4 +92,4 @@ Feel free to contribute, don't forget to mention if needed
 MIT License 
 
 ## Author and Contributor
-Radit
+Radityo
