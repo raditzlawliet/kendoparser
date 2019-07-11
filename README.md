@@ -11,6 +11,16 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - eaciit/dbflux Filter (Coming Soon)
 
 ## Features
+- Convert kendo datasource request into go struct
+- Basic Operator
+- Dbox filter & aggregate support for Mongo DB Driver
+- Transform filter + Chaining
+- Extendable & hookable operator handler
+- local scope operator
+- Parser Sort
+- Custom pre-filter handler
+
+## Incoming Feature
 - ~~Convert kendo datasource request into go struct~~
 - ~~Basic Operator~~
 - ~~Dbox filter & aggregate support for Mongo DB Driver~~
