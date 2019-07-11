@@ -14,10 +14,12 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - ~~Convert kendo datasource request into go struct~~
 - ~~Basic Operator~~
 - ~~Dbox filter & aggregate support for Mongo DB Driver~~
-- ~~Transform filter~~
+- ~~Transform filter + Chaining~~
 - ~~Extendable & hookable operator handler~~
 - ~~local scope operator~~
 - Parser Sort
+- Custom filter on-the-fly
+- Custom Sort on-the-fly
 - Extendable & hookable database driver (MySQL, SQL, Oracle)
 
 ## Current Limitation!
@@ -124,7 +126,7 @@ resultFilter := payload.Data.ToDboxFilter()
 Same like previously one
 
 ```go
-resultFilter := payload.Data.ToAggregationFilter() 
+resultFilter := payload.Data.ToDboxPipe() 
 // tk.M{"$and": []tk.M{tk.M{"_id": tk.M{"$eq": "val"}}}}
 
 ```
@@ -151,7 +153,7 @@ But if you want to add custom operator that didn't exists yet, you can register 
 ```go
 type Operator interface {
 	ToDboxFilter(KendoFilter) *dbox.Filter
-	ToAggregationFilter(KendoFilter) toolkit.M
+	ToDboxPipe(KendoFilter) toolkit.M
 }
 ```
 
@@ -169,7 +171,7 @@ func (BetweenOperator) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	}
 	return dbox.And(dbox.Gte(kf.Field, v0), dbox.Lte(kf.Field, v1))
 }
-func (BetweenOperator) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (BetweenOperator) ToDboxPipe(kf KendoFilter) toolkit.M {
     return nil // pass whatever if you dont want to implement
     // return DefaultOperator // or pass default
 }
@@ -215,6 +217,8 @@ transformIDMongo := func(kf *KendoFilter) {
 kendoFilter.Transform(transformIDMongo) // only current filter
 kendoFilter.TransformAll(transformIDMongo) // include filters
 
+// chaining is possible
+kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).ToDboxFilter()
 ```
 
 ## Contribute

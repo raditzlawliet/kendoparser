@@ -19,7 +19,7 @@ func (BetweenOperator) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	}
 	return dbox.And(dbox.Gte(kf.Field, v0), dbox.Lte(kf.Field, v1))
 }
-func (BetweenOperator) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (BetweenOperator) ToDboxPipe(kf KendoFilter) toolkit.M {
 	var v0, v1 interface{}
 	if len(kf.Values) > 0 {
 		v0 = kf.Values[0]

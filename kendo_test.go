@@ -125,7 +125,7 @@ func Test_ToPipeFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter := kendoFilter.ToAggregationFilter()
+	resultFilter := kendoFilter.ToDboxPipe()
 	expectedFilter := tk.M{"$and": []tk.M{tk.M{"_id": tk.M{"$eq": "val"}}}}
 	require.Equal(t, expectedFilter, resultFilter, "Result filter must same")
 
@@ -148,7 +148,7 @@ func Test_ToPipeFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.ToAggregationFilter()
+	resultFilter = kendoFilter.ToDboxPipe()
 	expectedFilter = tk.M{"$and": []tk.M{
 		tk.M{"$or": []tk.M{
 			tk.M{"_id": tk.M{"$eq": "val"}},
@@ -176,7 +176,7 @@ func Test_ToPipeFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.ToAggregationFilter()
+	resultFilter = kendoFilter.ToDboxPipe()
 	testTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
 	expectedFilter = tk.M{"$and": []tk.M{
 		tk.M{"_id": tk.M{"$eq": "val"}},
@@ -420,5 +420,88 @@ func Test_Transform(t *testing.T) {
 			),
 		)
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
+	}
+}
+func Test_PreFilterHandler(t *testing.T) {
+	// transform single filter
+	// ID => _id
+	{
+		kendoFilter := KendoFilter{
+			Filters: []KendoFilter{
+				KendoFilter{
+					Filters: []KendoFilter{
+						KendoFilter{Field: "ID", Operator: "eq", Value: "val"},
+						KendoFilter{Field: "STATUS", Operator: "eq", Value: "true"},
+					},
+					Logic: "or",
+				},
+				KendoFilter{
+					Filters: []KendoFilter{
+						KendoFilter{Field: "ID", Operator: "eq", Value: "val2"},
+						KendoFilter{Field: "ID", Operator: "neq", Value: "val2"},
+					},
+					Logic: "or",
+				},
+			},
+			Logic: "and",
+		}
+		// try dbox filter
+		resultFilter := kendoFilter.TransformAllField(strings.ToLower).
+			TransformAll(func(kf *KendoFilter) {
+				if kf.Field == "id" {
+					kf.Field = "_id"
+				}
+			}).
+			PreDboxFilterAll(func(kf *KendoFilter) *dbox.Filter {
+				if kf.Field == "status" {
+					// return your custom handler
+					return dbox.Eq(kf.Field, StringToBool(kf.Value, false))
+				}
+				return nil // pas nil to continue original filter
+			}).
+			ToDboxFilter()
+
+		// reset if needed another
+		kendoFilter.ResetPreFilter()
+
+		expectedFilter := dbox.And(
+			dbox.Or(
+				dbox.Eq("_id", "val"),
+				dbox.Eq("status", true),
+			),
+			dbox.Or(
+				dbox.Eq("_id", "val2"),
+				dbox.Ne("_id", "val2"),
+			),
+		)
+		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
+
+		// try dbox pipe
+		resultFilterPipe := kendoFilter.TransformAllField(strings.ToLower).
+			TransformAll(func(kf *KendoFilter) {
+				if kf.Field == "id" {
+					kf.Field = "_id"
+				}
+			}).
+			PreDboxPipeAll(func(kf *KendoFilter) tk.M {
+				if kf.Field == "status" {
+					// return your custom handler
+					return tk.M{kf.Field: StringToBool(kf.Value, false)}
+				}
+				return nil // pas nil to continue original filter
+			}).
+			ToDboxPipe()
+
+		expectedFilterPipe := tk.M{"$and": []tk.M{
+			tk.M{"$or": []tk.M{
+				tk.M{"_id": tk.M{"$eq": "val"}},
+				tk.M{"status": true},
+			}},
+			tk.M{"$or": []tk.M{
+				tk.M{"_id": tk.M{"$eq": "val2"}},
+				tk.M{"_id": tk.M{"$ne": "val2"}},
+			}},
+		}}
+		require.Equal(t, expectedFilterPipe, resultFilterPipe, "Result dbox filter must same")
 	}
 }

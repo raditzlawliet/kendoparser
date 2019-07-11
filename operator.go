@@ -22,7 +22,7 @@ var mutex = &sync.Mutex{}
 // Operator basic interface of OperatorHander will have 2 of this func
 type Operator interface {
 	ToDboxFilter(KendoFilter) *dbox.Filter
-	ToAggregationFilter(KendoFilter) toolkit.M
+	ToDboxPipe(KendoFilter) toolkit.M
 }
 
 func init() {
@@ -72,6 +72,13 @@ func RegisterOperator(op string, f Operator) {
 	mutex.Unlock()
 }
 
+// ResetRegisterOperator resetting global register (if needed)
+func ResetRegisterOperator() {
+	mutex.Lock()
+	RegisteredOperators = map[string]Operator{}
+	mutex.Unlock()
+}
+
 //SetDefaultOperator by default, if no operator found, will use this instead
 func SetDefaultOperator(f Operator) {
 	mutex.Lock()
@@ -96,7 +103,7 @@ type ExistsOp struct{}
 func (EqualOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.Eq(kf.Field, kf.Value)
 }
-func (EqualOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (EqualOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	if kf.IgnoreCase {
 		value := regexp.QuoteMeta(kf.Value)
 		return toolkit.M{kf.Field: bson.RegEx{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
@@ -106,13 +113,13 @@ func (EqualOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
 func (NotEqualOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.Ne(kf.Field, kf.Value)
 }
-func (NotEqualOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (NotEqualOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$ne": kf.Value}}
 }
 func (ContainOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.Contains(kf.Field, kf.Value)
 }
-func (ContainOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (ContainOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: RegexContains(kf.Value, kf.IgnoreCase)}
 }
 func (NotContainOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
@@ -126,32 +133,32 @@ func (NotContainOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 		}},
 	}
 }
-func (NotContainOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (NotContainOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$ne": RegexContains(kf.Value, kf.IgnoreCase)}}
 }
 func (InOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.In(kf.Field, kf.Values...)
 }
-func (InOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (InOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$in": kf.Values}}
 }
 func (GteOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.Gte(kf.Field, kf.Value)
 }
-func (GteOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (GteOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$gte": kf.Value}}
 }
 func (LteOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	return dbox.Lte(kf.Field, kf.Value)
 }
-func (LteOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (LteOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$lte": kf.Value}}
 }
 func (GteDateOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
 	return dbox.Gte(kf.Field, dtVariable)
 }
-func (GteDateOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (GteDateOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
 	return toolkit.M{kf.Field: toolkit.M{"$gte": dtVariable}}
 }
@@ -159,7 +166,7 @@ func (LteDateOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
 	return dbox.Lte(kf.Field, dtVariable)
 }
-func (LteDateOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (LteDateOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
 	return toolkit.M{kf.Field: toolkit.M{"$lte": dtVariable}}
 }
@@ -172,6 +179,6 @@ func (ExistsOp) ToDboxFilter(kf KendoFilter) *dbox.Filter {
 		},
 	}
 }
-func (ExistsOp) ToAggregationFilter(kf KendoFilter) toolkit.M {
+func (ExistsOp) ToDboxPipe(kf KendoFilter) toolkit.M {
 	return toolkit.M{kf.Field: toolkit.M{"$exists": StringToBool(kf.Value, false)}}
 }
