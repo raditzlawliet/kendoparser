@@ -17,9 +17,8 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - ~~Transform filter + Chaining~~
 - ~~Extendable & hookable operator handler~~
 - ~~local scope operator~~
-- Parser Sort
-- Custom filter on-the-fly
-- Custom Sort on-the-fly
+- ~~Parser Sort~~
+- ~~Custom pre-filter handler~~
 - Extendable & hookable database driver (MySQL, SQL, Oracle)
 
 ## Current Limitation!
@@ -182,6 +181,9 @@ func (BetweenOperator) ToDboxPipe(kf KendoFilter) toolkit.M {
 betOp := BetweenOperator{}
 RegisterOperator("between", betOp)
 
+// reset 
+ResetRegisterOperator()
+
 // overwrite Default Operator
 SetDefaultOperator(betOp)
 ```
@@ -219,6 +221,54 @@ kendoFilter.TransformAll(transformIDMongo) // include filters
 
 // chaining is possible
 kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).ToDboxFilter()
+```
+
+### Custom pre-filter
+You can also add custom single handler before building filter by registered operator. This approach you can add custom direct filter within loop filter. 
+For example you can direct create your custom filter when the field is "status" like below
+```go
+// dbox filter
+resultFilter := kendoFilter.TransformAllField(strings.ToLower).
+    TransformAll(func(kf *KendoFilter) {
+        if kf.Field == "id" {
+            kf.Field = "_id"
+        }
+    }).
+    PreDboxFilterAll(func(kf *KendoFilter) *dbox.Filter {
+        if kf.Field == "status" {
+            // return your custom handler
+            return dbox.Eq(kf.Field, StringToBool(kf.Value, false))
+        }
+        return nil // pas nil to continue original filter
+    }).
+    ToDboxFilter()
+
+// reset if needed another
+kendoFilter.ResetPreFilter()
+
+// dbox pipe
+resultFilterPipe := kendoFilter.TransformAllField(strings.ToLower).
+    TransformAll(func(kf *KendoFilter) {
+        if kf.Field == "id" {
+            kf.Field = "_id"
+        }
+    }).
+    PreDboxPipeAll(func(kf *KendoFilter) tk.M {
+        if kf.Field == "status" {
+            // return your custom handler
+            return tk.M{kf.Field: StringToBool(kf.Value, false)}
+        }
+        return nil // pas nil to continue original filter
+    }).
+    ToDboxPipe()
+```
+currently we have 2 pre-filter handler, later we will have custom handler more dynamic if needed.
+
+## Sort
+do you need sort? You can do it easly.
+```go
+result := kData.Sort.ToDbox()
+resultPipe := kData.Sort.ToDboxPipe()
 ```
 
 ## Contribute

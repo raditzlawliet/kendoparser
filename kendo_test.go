@@ -8,6 +8,7 @@ import (
 	"github.com/eaciit/dbox"
 	tk "github.com/eaciit/toolkit"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func Test_ToDboxFilter(t *testing.T) {
@@ -503,5 +504,49 @@ func Test_PreFilterHandler(t *testing.T) {
 			}},
 		}}
 		require.Equal(t, expectedFilterPipe, resultFilterPipe, "Result dbox filter must same")
+	}
+}
+
+func Test_Sort(t *testing.T) {
+	{
+		kData := KendoData{
+			Sort: KendoSortArray{
+				KendoSort{
+					Field: "foo",
+					Dir:   "DESC",
+				},
+				KendoSort{
+					Field: "bar",
+					Dir:   "ASC",
+				},
+				KendoSort{
+					Field: "_id",
+					Dir:   "desc",
+				},
+			},
+		}
+
+		// try dbox filter
+		result := kData.Sort.ToDbox()
+		resultPipe := kData.Sort.ToDboxPipe()
+
+		expected := []string{"-foo", "bar", "-_id"}
+		expectedPipe := bson.D{
+			bson.DocElem{
+				Name:  "foo",
+				Value: -1,
+			},
+			bson.DocElem{
+				Name:  "bar",
+				Value: 1,
+			},
+			bson.DocElem{
+				Name:  "_id",
+				Value: -1,
+			},
+		}
+
+		require.Equal(t, expected, result, "Result must same")
+		require.Equal(t, expectedPipe, resultPipe, "Result must same")
 	}
 }

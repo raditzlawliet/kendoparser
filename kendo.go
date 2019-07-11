@@ -10,6 +10,7 @@ import (
 
 	"github.com/eaciit/dbox"
 	"github.com/eaciit/toolkit"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // KendoRequest option variable to struct (each apps has different format, defined/extend yourself if needed)
@@ -245,17 +246,34 @@ type KendoSort struct {
 	Field string `json:"field"`
 }
 
+// KendoSortArray alias []KendoSort
 type KendoSortArray []KendoSort
 
 // ToDbox same with ToDboxFilter but for filter
-// func (ksa *KendoSortArray) ToDbox() {
-// 	sorter := []string{}
-// 	for _, ks := range *ksa {
+func (ksa *KendoSortArray) ToDbox() []string {
+	sorter := []string{}
+	for _, ks := range *ksa {
+		if strings.ToLower(ks.Dir) == "desc" {
+			ks.Field = "-" + ks.Field
+		}
+		sorter = append(sorter, ks.Field)
+	}
+	return sorter
+}
 
-// 	}
-// }
-
-// ToPipe same with ToAggreagateFilter but for sort
-func (ksa *KendoSortArray) ToPipe() {
-
+// ToDboxPipe same with ToAggreagateFilter but for sort
+// bson.D can use map but saving the ordering
+func (ksa *KendoSortArray) ToDboxPipe() bson.D {
+	sorter := bson.D{}
+	for _, ks := range *ksa {
+		sort := 1
+		if strings.ToLower(ks.Dir) == "desc" {
+			sort = -1
+		}
+		sorter = append(sorter, bson.DocElem{
+			Name:  ks.Field,
+			Value: sort,
+		})
+	}
+	return sorter
 }
