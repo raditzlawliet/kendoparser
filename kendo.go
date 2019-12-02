@@ -5,17 +5,15 @@ package gokendoparser
  * Radityo <radityohernanda@gmail.com>
  */
 
-import (
-	"strings"
-
-	"github.com/eaciit/dbox"
-	"github.com/eaciit/toolkit"
-	"gopkg.in/mgo.v2/bson"
-)
-
 // KendoRequest option variable to struct (each apps has different format, defined/extend yourself if needed)
 type KendoRequest struct {
 	Data KendoData `json:"data"`
+}
+
+// RegisterOperatorAll register operator local scope include childs
+func (kr *KendoRequest) RegisterOperatorAll(f Operator, op ...string) *KendoRequest {
+	kr.Data.Filter.RegisterOperatorAll(f, op...)
+	return kr
 }
 
 // KendoData datasource payload
@@ -43,9 +41,7 @@ type KendoFilter struct {
 
 	// will not change the original value
 	registeredOperators map[string]Operator
-	preDboxFilter       []func(*KendoFilter) *dbox.Filter
-	preDboxPipe         []func(*KendoFilter) toolkit.M
-}	
+}
 
 // GetRegisteredOperators GetRegisteredOperators
 func (kf *KendoFilter) GetRegisteredOperators() map[string]Operator {
@@ -79,151 +75,18 @@ func (kf *KendoFilter) AddPreFilter(f func(*KendoFilter)) *KendoFilter {
 	return kf
 }
 
-// ToDboxFilter convert KendoFilter into *dbox.Filter combination automaticly
-// return can @Nullable if filter and filters empty
-func (kf *KendoFilter) ToDboxFilter() *dbox.Filter {
-	// single filter
-	if len(kf.Filters) == 0 {
-		// processing will use copy instead to avoid change original value
-		ckFilter := *kf
-
-		// very customable handler
-		if kf.preDboxFilter != nil {
-			for _, handler := range kf.preDboxFilter {
-				f := handler(&ckFilter)
-				if f != nil {
-					return f
-				}
-			}
-		}
-
-		// local scope operator
-		if kf.registeredOperators != nil {
-			if opHandler, ok := kf.registeredOperators[kf.Operator]; ok && opHandler != nil {
-				return opHandler.ToDboxFilter(ckFilter)
-			}
-		}
-
-		if opHandler, ok := RegisteredOperators[kf.Operator]; ok {
-			return opHandler.ToDboxFilter(ckFilter)
-		}
-
-		return DefaultOperator.ToDboxFilter(ckFilter)
-	}
-
-	// so filters has some values
-	dboxFilters := []*dbox.Filter{}
-	for _, kFilterChild := range kf.Filters {
-		dboxFilter := kFilterChild.ToDboxFilter()
-		if dboxFilter != nil {
-			dboxFilters = append(dboxFilters, dboxFilter)
-		}
-	}
-
-	if len(dboxFilters) > 0 {
-		if strings.ToLower(kf.Logic) == "and" {
-			return dbox.And(dboxFilters...)
-		}
-		return dbox.Or(dboxFilters...)
-	}
-
-	return nil // can return nil if filter & filters are meh ...
-}
-
-// ToDboxPipe convert KendoFilter into M for pipe combination automaticly
-// return can @Nullable if filter and filters empty
-func (kf *KendoFilter) ToDboxPipe() toolkit.M {
-	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
-	if len(kf.Filters) == 0 {
-		// processing will use copy instead to avoid change original value
-		ckFilter := *kf
-
-		// very customable handler
-		if kf.preDboxPipe != nil {
-			for _, handler := range kf.preDboxPipe {
-				f := handler(&ckFilter)
-				if f != nil {
-					return f
-				}
-			}
-		}
-
-		// local scope operator
-		if kf.registeredOperators != nil {
-			if opHandler, ok := kf.registeredOperators[kf.Operator]; ok && opHandler != nil {
-				return opHandler.ToDboxPipe(ckFilter)
-			}
-		}
-
-		if opHandler, ok := RegisteredOperators[kf.Operator]; ok {
-			return opHandler.ToDboxPipe(ckFilter)
-		}
-		return DefaultOperator.ToDboxPipe(ckFilter)
-	}
-
-	// so filters has some values
-	filters := []toolkit.M{}
-	for _, kFilterChild := range kf.Filters {
-		filter := kFilterChild.ToDboxPipe()
-		if filter != nil {
-			filters = append(filters, filter)
-		}
-	}
-
-	if len(filters) > 0 {
-		if strings.ToLower(kf.Logic) == "and" {
-			return toolkit.M{"$and": filters}
-		}
-		return toolkit.M{"$or": filters}
-	}
-
-	return nil
-}
-
-// PreDboxFilter add custom handler pre-filtering
-func (kf *KendoFilter) PreDboxFilter(f func(*KendoFilter) *dbox.Filter) *KendoFilter {
-	if kf.preDboxFilter == nil {
-		kf.preDboxFilter = []func(*KendoFilter) *dbox.Filter{}
-	}
-	if f != nil {
-		kf.preDboxFilter = append(kf.preDboxFilter, f)
-	}
-	return kf
-}
-
 // PreDboxFilterAll add custom handler pre-filtering apply to nested struct
-func (kf *KendoFilter) PreDboxFilterAll(f func(*KendoFilter) *dbox.Filter) *KendoFilter {
+func (kf *KendoFilter) AddPreFilterAll(f func(*KendoFilter)) *KendoFilter {
 	for i := range kf.Filters {
-		kf.Filters[i].PreDboxFilterAll(f)
+		kf.Filters[i].AddPreFilterAll(f)
 	}
-	kf.PreDboxFilter(f)
-	return kf
-}
-
-// PreDboxPipe add custom handler pre-filtering
-func (kf *KendoFilter) PreDboxPipe(f func(*KendoFilter) toolkit.M) *KendoFilter {
-	if kf.preDboxPipe == nil {
-		kf.preDboxPipe = []func(*KendoFilter) toolkit.M{}
-	}
-	if f != nil {
-		kf.preDboxPipe = append(kf.preDboxPipe, f)
-	}
-	return kf
-}
-
-// PreDboxPipeAll add custom handler pre-filtering apply to nested struct
-func (kf *KendoFilter) PreDboxPipeAll(f func(*KendoFilter) toolkit.M) *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].PreDboxPipeAll(f)
-	}
-	kf.PreDboxPipe(f)
+	kf.AddPreFilter(f)
 	return kf
 }
 
 // ResetPreFilter reset all pre-filter available
 func (kf *KendoFilter) ResetPreFilter() *KendoFilter {
-	kf.preDboxFilter = []func(*KendoFilter) *dbox.Filter{}
-	kf.preDboxPipe = []func(*KendoFilter) toolkit.M{}
+	kf.preFilter = []func(*KendoFilter){}
 	return kf
 }
 
@@ -258,20 +121,22 @@ func (kf *KendoFilter) TransformAllField(t func(string) string) *KendoFilter {
 }
 
 // RegisterOperator register operator local scope
-func (kf *KendoFilter) RegisterOperator(op string, f Operator) *KendoFilter {
+func (kf *KendoFilter) RegisterOperator(f Operator, ops ...string) *KendoFilter {
 	if kf.registeredOperators == nil {
 		kf.registeredOperators = map[string]Operator{}
 	}
-	kf.registeredOperators[op] = f
+	for _, op := range ops {
+		kf.registeredOperators[op] = f
+	}
 	return kf
 }
 
 // RegisterOperatorAll register operator local scope include childs
-func (kf *KendoFilter) RegisterOperatorAll(op string, f Operator) *KendoFilter {
+func (kf *KendoFilter) RegisterOperatorAll(f Operator, ops ...string) *KendoFilter {
 	for i := range kf.Filters {
-		kf.Filters[i].RegisterOperatorAll(op, f)
+		kf.Filters[i].RegisterOperatorAll(f, ops...)
 	}
-	kf.RegisterOperator(op, f)
+	kf.RegisterOperator(f, ops...)
 	return kf
 }
 
@@ -283,32 +148,3 @@ type KendoSort struct {
 
 // KendoSortArray alias []KendoSort
 type KendoSortArray []KendoSort
-
-// ToDbox same with ToDboxFilter but for filter
-func (ksa *KendoSortArray) ToDbox() []string {
-	sorter := []string{}
-	for _, ks := range *ksa {
-		if strings.ToLower(ks.Dir) == "desc" {
-			ks.Field = "-" + ks.Field
-		}
-		sorter = append(sorter, ks.Field)
-	}
-	return sorter
-}
-
-// ToDboxPipe same with ToAggreagateFilter but for sort
-// bson.D can use map but saving the ordering
-func (ksa *KendoSortArray) ToDboxPipe() bson.D {
-	sorter := bson.D{}
-	for _, ks := range *ksa {
-		sort := 1
-		if strings.ToLower(ks.Dir) == "desc" {
-			sort = -1
-		}
-		sorter = append(sorter, bson.DocElem{
-			Name:  ks.Field,
-			Value: sort,
-		})
-	}
-	return sorter
-}

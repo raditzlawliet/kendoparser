@@ -1,4 +1,4 @@
-package gokendoparser
+package helper
 
 import (
 	"regexp"
