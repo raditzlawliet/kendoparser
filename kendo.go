@@ -38,10 +38,45 @@ type KendoFilter struct {
 	Value      string        `json:"value"`
 	Values     []interface{} `json:"values"`
 
+	// for extension
+	preFilter []func(*KendoFilter)
+
 	// will not change the original value
 	registeredOperators map[string]Operator
 	preDboxFilter       []func(*KendoFilter) *dbox.Filter
 	preDboxPipe         []func(*KendoFilter) toolkit.M
+}	
+
+// GetRegisteredOperators GetRegisteredOperators
+func (kf *KendoFilter) GetRegisteredOperators() map[string]Operator {
+	return kf.registeredOperators
+}
+
+// AddRegisteredOperator AddRegisteredOperator
+func (kf *KendoFilter) AddRegisteredOperator(k string, op Operator) *KendoFilter {
+	if kf.registeredOperators == nil {
+		kf.registeredOperators = map[string]Operator{}
+	}
+	if op != nil {
+		kf.registeredOperators[k] = op
+	}
+	return kf
+}
+
+// GetPreFilter GetPreFilter
+func (kf *KendoFilter) GetPreFilter() []func(*KendoFilter) {
+	return kf.preFilter
+}
+
+// AddPreFilter AddPreFilter
+func (kf *KendoFilter) AddPreFilter(f func(*KendoFilter)) *KendoFilter {
+	if kf.preFilter == nil {
+		kf.preFilter = []func(*KendoFilter){}
+	}
+	if f != nil {
+		kf.preFilter = append(kf.preFilter, f)
+	}
+	return kf
 }
 
 // ToDboxFilter convert KendoFilter into *dbox.Filter combination automaticly
