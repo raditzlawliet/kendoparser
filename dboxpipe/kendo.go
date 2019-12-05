@@ -9,18 +9,23 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// Parser Parser
+type Parser struct{}
+
 // ParseFilter convert KendoFilter into M for pipe combination automaticly
 // return can @Nullable if filter and filters empty
-func ParseFilter(kf *gokendoparser.KendoFilter) toolkit.M {
+func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
 		ckFilter := *kf
 
 		// very customable handler
-		if kf.GetPreFilter() != nil {
-			for _, handler := range kf.GetPreFilter() {
-				handler(&ckFilter)
+		if kf.GetBeforeParse() != nil {
+			for _, handler := range kf.GetBeforeParse() {
+				if r := handler(&ckFilter); r != nil {
+					return r
+				}
 			}
 		}
 
@@ -35,14 +40,17 @@ func ParseFilter(kf *gokendoparser.KendoFilter) toolkit.M {
 			}
 		}
 
-		if opHandler, ok := gokendoparser.RegisteredOperators[kf.Operator]; ok {
+		// global operator
+		if opHandler, ok := operatorManager.RegisteredOperators[kf.Operator]; ok {
 			f := opHandler.Filter(ckFilter)
 			if f != nil {
 				return f.(toolkit.M)
 			}
 			return nil
 		}
-		f := gokendoparser.DefaultOperator.Filter(ckFilter)
+
+		// defaultx
+		f := operatorManager.DefaultOperator.Filter(ckFilter)
 		if f != nil {
 			return f.(toolkit.M)
 		}
@@ -52,9 +60,9 @@ func ParseFilter(kf *gokendoparser.KendoFilter) toolkit.M {
 	// so filters has some values
 	filters := []toolkit.M{}
 	for _, kFilterChild := range kf.Filters {
-		filter := ParseFilter(&kFilterChild)
+		filter := parser.ParseFilter(&kFilterChild)
 		if filter != nil {
-			filters = append(filters, filter)
+			filters = append(filters, filter.(toolkit.M))
 		}
 	}
 
@@ -69,7 +77,7 @@ func ParseFilter(kf *gokendoparser.KendoFilter) toolkit.M {
 }
 
 // ParserSort ParserSort
-func ParserSort(ksa *gokendoparser.KendoSortArray) bson.D {
+func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
 	sorter := bson.D{}
 	for _, ks := range *ksa {
 		sort := 1

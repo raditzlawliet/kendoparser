@@ -10,58 +10,39 @@ import (
 	"github.com/raditzlawliet/gokendoparser/helper"
 )
 
+var (
+	operatorManager = gokendoparser.OperatorManager{}
+	equalOp         = EqualOp{}
+	notEqualOp      = NotEqualOp{}
+	containOp       = ContainOp{}
+	notContainOp    = NotContainOp{}
+	inOp            = InOp{}
+	gteOp           = GteOp{}
+	lteOp           = LteOp{}
+	gteDateOp       = GteDateOp{}
+	lteDateOp       = LteDateOp{}
+	existsOp        = ExistsOp{}
+	betweenOp       = BetweenOp{}
+)
+
 func init() {
 	RegisterOperator()
 }
 
 // RegisterOperator RegisterOperator
 func RegisterOperator() {
-	equalOp := EqualOp{}
-	notEqualOp := NotEqualOp{}
-	containOp := ContainOp{}
-	notContainOp := NotContainOp{}
-	inOp := InOp{}
-	gteOp := GteOp{}
-	lteOp := LteOp{}
-	gteDateOp := GteDateOp{}
-	lteDateOp := LteDateOp{}
-	existsOp := ExistsOp{}
-
-	gokendoparser.SetDefaultOperator(equalOp)
-	gokendoparser.RegisterOperator(equalOp, "eq", "equal")
-	gokendoparser.RegisterOperator(notEqualOp, "ne", "neq", "notequal")
-	gokendoparser.RegisterOperator(containOp, "contain", "contains")
-	gokendoparser.RegisterOperator(notContainOp, "notcontains", "notcontains", "doesnotcontain", "doesnotcontains")
-	gokendoparser.RegisterOperator(inOp, "in")
-	gokendoparser.RegisterOperator(gteOp, "gte")
-	gokendoparser.RegisterOperator(lteOp, "lte")
-	gokendoparser.RegisterOperator(gteDateOp, "gteDate")
-	gokendoparser.RegisterOperator(lteDateOp, "lteDate")
-	gokendoparser.RegisterOperator(existsOp, "exists")
-}
-
-func RegisterTo(k *gokendoparser.KendoRequest) {
-	equalOp := EqualOp{}
-	notEqualOp := NotEqualOp{}
-	containOp := ContainOp{}
-	notContainOp := NotContainOp{}
-	inOp := InOp{}
-	gteOp := GteOp{}
-	lteOp := LteOp{}
-	gteDateOp := GteDateOp{}
-	lteDateOp := LteDateOp{}
-	existsOp := ExistsOp{}
-
-	k.RegisterOperatorAll(equalOp, "eq", "equal")
-	k.RegisterOperatorAll(notEqualOp, "ne", "neq", "notequal")
-	k.RegisterOperatorAll(containOp, "contain", "contains")
-	k.RegisterOperatorAll(notContainOp, "notcontains", "notcontains", "doesnotcontain", "doesnotcontains")
-	k.RegisterOperatorAll(inOp, "in")
-	k.RegisterOperatorAll(gteOp, "gte")
-	k.RegisterOperatorAll(lteOp, "lte")
-	k.RegisterOperatorAll(gteDateOp, "gteDate")
-	k.RegisterOperatorAll(lteDateOp, "lteDate")
-	k.RegisterOperatorAll(existsOp, "exists")
+	operatorManager.SetDefaultOperator(equalOp)
+	operatorManager.RegisterOperator(equalOp, "eq", "equal")
+	operatorManager.RegisterOperator(notEqualOp, "ne", "neq", "notequal")
+	operatorManager.RegisterOperator(containOp, "contain", "contains")
+	operatorManager.RegisterOperator(notContainOp, "notcontains", "notcontains", "doesnotcontain", "doesnotcontains")
+	operatorManager.RegisterOperator(inOp, "in")
+	operatorManager.RegisterOperator(gteOp, "gte")
+	operatorManager.RegisterOperator(lteOp, "lte")
+	operatorManager.RegisterOperator(gteDateOp, "gtedate")
+	operatorManager.RegisterOperator(lteDateOp, "ltedate")
+	operatorManager.RegisterOperator(existsOp, "exist", "exists")
+	operatorManager.RegisterOperator(betweenOp, "between")
 }
 
 // EqualOp EqualOp
@@ -93,6 +74,9 @@ type LteDateOp struct{}
 
 // ExistsOp ExistsOp
 type ExistsOp struct{}
+
+// BetweenOp BetweenOp
+type BetweenOp struct{}
 
 // Filter Filter
 func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
@@ -158,4 +142,16 @@ func (ExistsOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 			"$exists": helper.StringToBool(kf.Value, false),
 		},
 	}
+}
+
+// Filter Filter
+func (BetweenOp) Filter(kf gokendoparser.KendoFilter) interface{} {
+	var v0, v1 interface{}
+	if len(kf.Values) > 0 {
+		v0 = kf.Values[0]
+	}
+	if len(kf.Values) > 1 {
+		v1 = kf.Values[1]
+	}
+	return dbox.And(dbox.Gte(kf.Field, v0), dbox.Lte(kf.Field, v1))
 }

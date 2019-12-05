@@ -8,18 +8,23 @@ import (
 	"github.com/raditzlawliet/gokendoparser"
 )
 
+// Parser Parser
+type Parser struct{}
+
 // ParseFilter convert KendoFilter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func ParseFilter(kf *gokendoparser.KendoFilter) *dbox.Filter {
+func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// single filter
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
 		ckFilter := *kf
 
 		// very customable handler
-		if kf.GetPreFilter() != nil {
-			for _, handler := range kf.GetPreFilter() {
-				handler(&ckFilter)
+		if kf.GetBeforeParse() != nil {
+			for _, handler := range kf.GetBeforeParse() {
+				if r := handler(&ckFilter); r != nil {
+					return r
+				}
 			}
 		}
 
@@ -34,7 +39,8 @@ func ParseFilter(kf *gokendoparser.KendoFilter) *dbox.Filter {
 			}
 		}
 
-		if opHandler, ok := gokendoparser.RegisteredOperators[kf.Operator]; ok {
+		// parser scope registered
+		if opHandler, ok := operatorManager.RegisteredOperators[kf.Operator]; ok {
 			f := opHandler.Filter(ckFilter)
 			if f != nil {
 				return f.(*dbox.Filter)
@@ -42,7 +48,8 @@ func ParseFilter(kf *gokendoparser.KendoFilter) *dbox.Filter {
 			return nil
 		}
 
-		f := gokendoparser.DefaultOperator.Filter(ckFilter)
+		// // global defult
+		f := operatorManager.DefaultOperator.Filter(ckFilter)
 		if f != nil {
 			return f.(*dbox.Filter)
 		}
@@ -52,9 +59,9 @@ func ParseFilter(kf *gokendoparser.KendoFilter) *dbox.Filter {
 	// so filters has some values
 	dboxFilters := []*dbox.Filter{}
 	for _, kFilterChild := range kf.Filters {
-		dboxFilter := ParseFilter(&kFilterChild)
+		dboxFilter := parser.ParseFilter(&kFilterChild)
 		if dboxFilter != nil {
-			dboxFilters = append(dboxFilters, dboxFilter)
+			dboxFilters = append(dboxFilters, dboxFilter.(*dbox.Filter))
 		}
 	}
 
@@ -67,8 +74,8 @@ func ParseFilter(kf *gokendoparser.KendoFilter) *dbox.Filter {
 	return nil // can return nil if filter & filters are meh ...
 }
 
-// ParserSort ParserSort
-func ParserSort(ksa *gokendoparser.KendoSortArray) []string {
+// ParserSort return []string
+func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
 	sorter := []string{}
 	for _, ks := range *ksa {
 		if strings.ToLower(ks.Dir) == "desc" {

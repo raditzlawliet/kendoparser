@@ -11,9 +11,9 @@ type KendoRequest struct {
 }
 
 // RegisterOperatorAll register operator local scope include childs
-func (kr *KendoRequest) RegisterOperatorAll(f Operator, op ...string) *KendoRequest {
-	kr.Data.Filter.RegisterOperatorAll(f, op...)
-	return kr
+func (k *KendoRequest) RegisterOperatorAll(f Operator, ops ...string) *KendoRequest {
+	k.Data.Filter.RegisterOperatorAll(f, ops...)
+	return k
 }
 
 // KendoData datasource payload
@@ -36,11 +36,10 @@ type KendoFilter struct {
 	Value      string        `json:"value"`
 	Values     []interface{} `json:"values"`
 
-	// for extension
-	preFilter []func(*KendoFilter)
-
 	// will not change the original value
 	registeredOperators map[string]Operator
+	// for extension
+	preParser []ParseFilter
 }
 
 // GetRegisteredOperators GetRegisteredOperators
@@ -59,34 +58,50 @@ func (kf *KendoFilter) AddRegisteredOperator(k string, op Operator) *KendoFilter
 	return kf
 }
 
-// GetPreFilter GetPreFilter
-func (kf *KendoFilter) GetPreFilter() []func(*KendoFilter) {
-	return kf.preFilter
+// GetBeforeParse GetBeforeParse
+func (kf *KendoFilter) GetBeforeParse() []ParseFilter {
+	return kf.preParser
 }
 
-// AddPreFilter AddPreFilter
-func (kf *KendoFilter) AddPreFilter(f func(*KendoFilter)) *KendoFilter {
-	if kf.preFilter == nil {
-		kf.preFilter = []func(*KendoFilter){}
+// BeforeParse BeforeParse
+func (kf *KendoFilter) BeforeParse(fs ...ParseFilter) *KendoFilter {
+	if kf.preParser == nil {
+		kf.preParser = []ParseFilter{}
 	}
-	if f != nil {
-		kf.preFilter = append(kf.preFilter, f)
+	for _, f := range fs {
+		if f != nil {
+			kf.preParser = append(kf.preParser, f)
+		}
 	}
 	return kf
 }
 
-// PreDboxFilterAll add custom handler pre-filtering apply to nested struct
-func (kf *KendoFilter) AddPreFilterAll(f func(*KendoFilter)) *KendoFilter {
+// BeforeParseAll BeforeParseAll
+func (kf *KendoFilter) BeforeParseAll(fs ...ParseFilter) *KendoFilter {
 	for i := range kf.Filters {
-		kf.Filters[i].AddPreFilterAll(f)
+		kf.Filters[i].BeforeParseAll(fs...)
 	}
-	kf.AddPreFilter(f)
+	kf.BeforeParse(fs...)
 	return kf
 }
 
-// ResetPreFilter reset all pre-filter available
-func (kf *KendoFilter) ResetPreFilter() *KendoFilter {
-	kf.preFilter = []func(*KendoFilter){}
+// Parse Parse will return interface
+func (kf *KendoFilter) Parse(f Parser) interface{} {
+	return f.ParseFilter(kf)
+}
+
+// ResetBeforeParse reset all pre-filter available
+func (kf *KendoFilter) ResetBeforeParse() *KendoFilter {
+	kf.preParser = []ParseFilter{}
+	return kf
+}
+
+// ResetBeforeParseAll reset all pre-filter available
+func (kf *KendoFilter) ResetBeforeParseAll() *KendoFilter {
+	for i := range kf.Filters {
+		kf.Filters[i].ResetBeforeParseAll()
+	}
+	kf.preParser = []ParseFilter{}
 	return kf
 }
 
@@ -148,3 +163,8 @@ type KendoSort struct {
 
 // KendoSortArray alias []KendoSort
 type KendoSortArray []KendoSort
+
+// Parse Parse
+func (ksa *KendoSortArray) Parse(f Parser) interface{} {
+	return f.ParserSort(ksa)
+}

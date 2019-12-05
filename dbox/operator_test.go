@@ -1,30 +1,30 @@
-package gokendoparser
+package kpdbox
 
 import (
 	"testing"
 
 	"github.com/eaciit/dbox"
-	"github.com/eaciit/toolkit"
 	tk "github.com/eaciit/toolkit"
+	"github.com/raditzlawliet/gokendoparser"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_OperatorHook(t *testing.T) {
 	// Single filter
-	betOp := BetweenOperator{}
-	RegisterOperator("between_custom", betOp)
+	betOp := BetweenOp{}
+	operatorManager.RegisterOperator(betOp, "between_custom")
 
 	// testing eq / global
 	{
-		kendoFilter := KendoFilter{
+		kendoFilter := gokendoparser.KendoFilter{
 			Field: "_id", Operator: "eq", Value: "val",
 		}
 
-		resultFilter := kendoFilter.ToDboxFilter()
+		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
 		expectedFilter := dbox.Eq("_id", "val")
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
-		kendoRequest := KendoRequest{}
+		kendoRequest := gokendoparser.KendoRequest{}
 		e := tk.UnjsonFromString(`{
 			"data": {
 				"filter": {
@@ -36,21 +36,21 @@ func Test_OperatorHook(t *testing.T) {
 		}`, &kendoRequest)
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.ToDboxFilter()
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 
 	// testing custom registered between
 	{
-		kendoFilter := KendoFilter{
+		kendoFilter := gokendoparser.KendoFilter{
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.ToDboxFilter()
+		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
-		kendoRequest := KendoRequest{}
+		kendoRequest := gokendoparser.KendoRequest{}
 		e := tk.UnjsonFromString(`{
 			"data": {
 				"filter": {
@@ -62,85 +62,60 @@ func Test_OperatorHook(t *testing.T) {
 		}`, &kendoRequest)
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.ToDboxFilter()
-		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
-	}
-
-	{
-		kendoFilter := KendoFilter{
-			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
-		}
-
-		resultFilter := kendoFilter.ToDboxPipe()
-		expectedFilter := toolkit.M{"v": toolkit.M{"$gte": "1", "$lte": "2"}}
-		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
-
-		kendoRequest := KendoRequest{}
-		e := tk.UnjsonFromString(`{
-			"data": {
-				"filter": {
-					"field": "v",
-					"operator": "between_custom",
-					"values": ["1", "2"]
-				}
-			}
-		}`, &kendoRequest)
-		require.Nil(t, e, "Json parse must work")
-		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.ToDboxPipe()
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 }
 
 func Test_OperatorHookLocalScope(t *testing.T) {
-	ResetRegisterOperator()
-	DefaultOperator = EqualOp{}
+	operatorManager.Reset()
+	operatorManager.SetDefaultOperator(EqualOp{})
 	// testing custom registered between but not registered yet
 	{
-		kendoFilter := KendoFilter{
+		kendoFilter := gokendoparser.KendoFilter{
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.ToDboxFilter()
+		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
 		expectedFilter := dbox.Eq("v", "") // because between not registered YET
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
 	}
 
-	ResetRegisterOperator()
-	DefaultOperator = EqualOp{}
+	operatorManager.Reset()
+	operatorManager.SetDefaultOperator(EqualOp{})
 	{
 		// Single filter
-		betOp := BetweenOperator{}
+		betOp := BetweenOp{}
 
-		kendoFilter := KendoFilter{
+		kendoFilter := gokendoparser.KendoFilter{
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.RegisterOperator("between_custom", betOp).ToDboxFilter()
+		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 	}
 
-	ResetRegisterOperator()
-	DefaultOperator = EqualOp{}
+	operatorManager.Reset()
+	operatorManager.SetDefaultOperator(EqualOp{})
 	{
 		// Single filter
-		betOp := BetweenOperator{}
+		betOp := BetweenOp{}
 
-		kendoFilter := KendoFilter{
-			Filters: []KendoFilter{
-				KendoFilter{
+		kendoFilter := gokendoparser.KendoFilter{
+			Filters: []gokendoparser.KendoFilter{
+				gokendoparser.KendoFilter{
 					Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 				},
-				KendoFilter{
+				gokendoparser.KendoFilter{
 					Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 				},
 			},
 			Logic: "and",
 		}
 
-		resultFilter := kendoFilter.RegisterOperatorAll("between_custom", betOp).ToDboxFilter()
+		resultFilter := kendoFilter.RegisterOperatorAll(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
 		expectedFilter :=
 			dbox.And(
 				dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2")),
@@ -148,4 +123,20 @@ func Test_OperatorHookLocalScope(t *testing.T) {
 			)
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 	}
+
+	operatorManager.Reset()
+	operatorManager.SetDefaultOperator(EqualOp{})
+	{
+		// Single filter
+		betOp := BetweenOp{}
+
+		kendoFilter := gokendoparser.KendoFilter{
+			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
+		}
+
+		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
+		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
+		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
+	}
+
 }

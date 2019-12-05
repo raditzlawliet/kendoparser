@@ -5,17 +5,17 @@
 <!-- [![Go Report Card](https://goreportcard.com/badge/github.com/raditzlawliet/gokendoparser)](https://goreportcard.com/report/github.com/raditzlawliet/gokendoparser) -->
 
 # Go Kendo Parser
-Your Golang Kendo parser, parsing Kendo data source request to golang struct immediately to eaciit/dbox filter or aggregate filter for **Mongo DB Driver**. Available parser to
+Your Golang Kendo parser, parsing Kendo data source request to golang struct immediately. Available parser to
 - [eaciit/dbox Filter](https://github.com/eaciit/dbox)
 - [eaciit/dbox Pipe or Aggregation type](https://github.com/eaciit/dbox)
 - eaciit/dbflux Filter (Coming Soon)
+- mongo-go-driver Filter (Coming Soon)
 
 ## Features
 - Convert kendo datasource request into go struct
 - Basic Operator
-- Dbox filter & aggregate support for Mongo DB Driver
 - Transform filter + Chaining
-- Extendable & hookable operator handler
+- Plugable operator handler
 - local scope operator
 - Parser Sort
 - Custom pre-filter handler
@@ -23,17 +23,12 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 ## Incoming Feature
 - ~~Convert kendo datasource request into go struct~~
 - ~~Basic Operator~~
-- ~~Dbox filter & aggregate support for Mongo DB Driver~~
 - ~~Transform filter + Chaining~~
-- ~~Extendable & hookable operator handler~~
+- ~~Plugable operator handler~~
 - ~~local scope operator~~
 - ~~Parser Sort~~
 - ~~Custom pre-filter handler~~
-- Extendable & hookable database driver (MySQL, SQL, Oracle)
-
-## Current Limitation!
-- Only working for eaciit/dbox package
-- Only working for MongoDB
+- ~~Extendable to any driver~~
 
 ## Getting Started
 Easy to use like title said
