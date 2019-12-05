@@ -7,7 +7,8 @@ import (
 
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -82,7 +83,7 @@ type BetweenOp struct{}
 func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	if kf.IgnoreCase {
 		value := regexp.QuoteMeta(kf.Value)
-		return bson.M{kf.Field: bson.RegEx{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
+		return bson.M{kf.Field: primitive.Regex{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
 	}
 	return bson.M{kf.Field: bson.M{"$eq": kf.Value}}
 }
@@ -94,12 +95,12 @@ func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (ContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return bson.M{kf.Field: helper.RegexContains(kf.Value, kf.IgnoreCase)}
+	return bson.M{kf.Field: RegexContains(kf.Value, kf.IgnoreCase)}
 }
 
 // Filter Filter
 func (NotContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return bson.M{kf.Field: bson.M{"$ne": helper.RegexContains(kf.Value, kf.IgnoreCase)}}
+	return bson.M{kf.Field: bson.M{"$ne": RegexContains(kf.Value, kf.IgnoreCase)}}
 }
 
 // Filter Filter
@@ -144,4 +145,20 @@ func (BetweenOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 		v1 = kf.Values[1]
 	}
 	return bson.M{kf.Field: bson.M{"$gte": v0, "$lte": v1}}
+}
+
+// RegexCaseInsensitive Generate bson.RegEx for case insensitive
+func RegexCaseInsensitive(value string) primitive.Regex {
+	value = regexp.QuoteMeta(value)
+	return primitive.Regex{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}
+}
+
+// RegexContains Generate bson.RegEx for contains
+func RegexContains(value string, ignoreCase bool) primitive.Regex {
+	value = regexp.QuoteMeta(value)
+	if ignoreCase {
+		return primitive.Regex{Pattern: "" + strings.ToLower(value) + "", Options: "i"}
+	} else {
+		return primitive.Regex{Pattern: "" + strings.ToLower(value) + "", Options: ""}
+	}
 }
