@@ -88,7 +88,7 @@ func Test_ParseFilter(t *testing.T) {
 			"$and", []bson.D{
 				bson.D{{"_id", bson.M{"$eq": "val"}}},
 				bson.D{{"_id", bson.M{"$ne": "val"}}},
-				bson.D{{"_id", helper.RegexContains("val", false)}},
+				bson.D{{"_id", RegexContains("val", false)}},
 				bson.D{{"_id", bson.M{"$in": []interface{}{"val"}}}},
 				bson.D{{"_id", bson.M{"$gte": "val"}}},
 				bson.D{{"_id", bson.M{"$lte": "val"}}},
