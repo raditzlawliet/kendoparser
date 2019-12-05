@@ -8,7 +8,7 @@ import (
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func Test_ParseFilter(t *testing.T) {
@@ -182,17 +182,14 @@ func Test_Sort(t *testing.T) {
 		result := kData.Sort.Parse(Parser{}).(bson.D)
 
 		expectedPipe := bson.D{
-			bson.DocElem{
-				Name:  "foo",
-				Value: -1,
+			bson.E{"foo", -1},
+			bson.E{
+				"bar",
+				1,
 			},
-			bson.DocElem{
-				Name:  "bar",
-				Value: 1,
-			},
-			bson.DocElem{
-				Name:  "_id",
-				Value: -1,
+			bson.E{
+				"_id",
+				-1,
 			},
 		}
 

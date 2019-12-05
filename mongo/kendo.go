@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/raditzlawliet/gokendoparser"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Parser Parser
@@ -16,6 +16,10 @@ type Parser struct{}
 func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
 	if len(kf.Filters) == 0 {
+		if kf.Operator == "" {
+			return bson.D{{}}
+		}
+
 		// processing will use copy instead to avoid change original value
 		ckFilter := *kf
 
@@ -35,7 +39,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 				if f != nil {
 					return f
 				}
-				return nil
+				return bson.D{{}}
 			}
 		}
 
@@ -45,7 +49,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 			if f != nil {
 				return f
 			}
-			return nil
+			return bson.D{{}}
 		}
 
 		// defaultx
@@ -53,7 +57,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 		if f != nil {
 			return f
 		}
-		return nil
+		return bson.D{{}}
 	}
 
 	// so filters has some values
@@ -67,7 +71,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 			case bson.M:
 				d := bson.D{}
 				for k, v := range filterAssertion {
-					d = append(d, bson.DocElem{k, v})
+					d = append(d, bson.E{k, v})
 				}
 				filters = append(filters, d)
 			}
@@ -81,7 +85,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 		return bson.D{{"$or", filters}}
 	}
 
-	return nil
+	return bson.D{{}}
 }
 
 // ParserSort ParserSort
@@ -92,10 +96,7 @@ func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
 		if strings.ToLower(ks.Dir) == "desc" {
 			sort = -1
 		}
-		sorter = append(sorter, bson.DocElem{
-			Name:  ks.Field,
-			Value: sort,
-		})
+		sorter = append(sorter, bson.E{ks.Field, sort})
 	}
 	return sorter
 }
