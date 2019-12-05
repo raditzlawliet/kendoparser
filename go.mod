@@ -10,6 +10,6 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/stretchr/testify v1.4.0
 	go.mongodb.org/mongo-driver v1.1.3
-	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
+	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )

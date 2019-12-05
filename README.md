@@ -9,7 +9,7 @@ Your Golang Kendo parser, parsing Kendo data source request to golang struct imm
 - [eaciit/dbox Filter](https://github.com/eaciit/dbox)
 - [eaciit/dbox Pipe or Aggregation type](https://github.com/eaciit/dbox)
 - eaciit/dbflux Filter (Coming Soon)
-- mongo-go-driver Filter (Coming Soon)
+- [mongo-go-driver Filter](https://github.com/mongodb/mongo-go-driver/)
 
 ## Features
 - Convert kendo datasource request into go struct
