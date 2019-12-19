@@ -77,7 +77,6 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 		}
 		return builder.Or(filters...)
 	}
-
 	return builder.NewCond()
 }
 

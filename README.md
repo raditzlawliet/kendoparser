@@ -8,32 +8,23 @@
 Your Golang Kendo parser, parsing Kendo data source request to golang struct immediately. Available parser to
 - [eaciit/dbox Filter](https://github.com/eaciit/dbox)
 - [eaciit/dbox Pipe or Aggregation type](https://github.com/eaciit/dbox)
-- eaciit/dbflux Filter (Coming Soon)
+- eaciit/dbflux Filter
 - [mongo-go-driver Filter](https://github.com/mongodb/mongo-go-driver/)
+- [xorm/builder Filter](https://gitea.com/xorm/builder/) This builder have nice ToSQL function, so you can transform into SQL 
 
 ## Features
 - Convert kendo datasource request into go struct
 - Basic Operator
 - Transform filter + Chaining
 - Plugable operator handler
-- local scope operator
 - Parser Sort
-- Custom pre-filter handler
-
-## Incoming Feature
-- ~~Convert kendo datasource request into go struct~~
-- ~~Basic Operator~~
-- ~~Transform filter + Chaining~~
-- ~~Plugable operator handler~~
-- ~~local scope operator~~
-- ~~Parser Sort~~
-- ~~Custom pre-filter handler~~
-- ~~Extendable to any driver~~
+- Custom pre-filter / before parse handler
+- Extendable to any result
 
 ## Getting Started
-Easy to use like title said
+Go get, import, use
 
-### To eaciit/dbox filter
+### Parse Filter
 #### JSON Sample
 ```json
 {
@@ -49,6 +40,8 @@ Easy to use like title said
 
 #### GO Implementation 
 ```go
+import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
+
 // just for information
 // you can use gorilla mux or knot
 var k = k *knot.WebContext
@@ -66,8 +59,9 @@ payload := KendoRequest {
     },
 }
 
-resultFilter := payload.Data.ToDboxFilter() 
-// dbox.Eq("_id", "val")
+parser := kpmongo.Parser{}
+filter := payload.Data.Filter.Parse(parser)
+sort := payload.Data.Sort.Parse(parser)
 ```
 
 #### More JSON
@@ -95,6 +89,7 @@ resultFilter := payload.Data.ToDboxFilter()
 }
 ```
 ```go
+import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
 // just for information
 // you can use gorilla mux or knot
 var k = k *knot.WebContext
@@ -119,25 +114,9 @@ payload := KendoRequest {
     },
 }
 
-resultFilter := payload.Data.ToDboxFilter() 
-// dbox.And(
-//     dbox.Eq("_id", "val"),
-//     dbox.In("abc", []interface{}{"a", "b"}...),
-// )
-```
-
-### To eaciit/dbox aggregation filter (return eaciit/toolkit/M)
-Same like previously one
-
-```go
-resultFilter := payload.Data.ToDboxPipe() 
-// tk.M{"$and": []tk.M{tk.M{"_id": tk.M{"$eq": "val"}}}}
-
-```
-
-### To eaciit/dbflux filter (Coming soon)
-Same like previously one
-```go
+parser := kpmongo.Parser{}
+filter := payload.Data.Filter.Parse(parser)
+sort := payload.Data.Sort.Parse(parser)
 ```
 
 ### Extend & Hook custom operator handler
@@ -153,63 +132,34 @@ By default, package already registerd with basic operator such as
 - Lte Date
 - Exists
 
-But if you want to add custom operator that didn't exists yet, you can register in global handler (for sample you can see [operator_between.go](operator_between.go)). You must implement all function in Operator interface (or just return nil if you dont want implement other hook)
+But if you want to add custom operator that didn't exists yet, you can register in manually (for sample you can see [operator.go](adapter/mongo/operator.go)). Please ensure the return must be same with other operator each adapter. Each adapter have operatorManager that helping you to register into each adapter parser
 ```go
 type Operator interface {
-	ToDboxFilter(KendoFilter) *dbox.Filter
-	ToDboxPipe(KendoFilter) toolkit.M
+	Filter(KendoFilter) interface{}
 }
-```
 
-```go
-// extend struct from interface Operator, all interface func must appear
-type BetweenOperator struct {}
+type EqualOp struct{}
 
-func (BetweenOperator) ToDboxFilter(kf KendoFilter) *dbox.Filter {
-	var v0, v1 interface{}
-	if len(kf.Values) > 0 {
-		v0 = kf.Values[0]
+// Filter Filter
+func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
+	if kf.IgnoreCase {
+		return EqCi{kf.Field: kf.Value}
 	}
-	if len(kf.Values) > 1 {
-		v1 = kf.Values[1]
-	}
-	return dbox.And(dbox.Gte(kf.Field, v0), dbox.Lte(kf.Field, v1))
+	return builder.Eq{kf.Field: kf.Value}
 }
-func (BetweenOperator) ToDboxPipe(kf KendoFilter) toolkit.M {
-    return nil // pass whatever if you dont want to implement
-    // return DefaultOperator // or pass default
+
+func register() {
+	operatorManager.RegisterOperator(equalOp, "eq", "equal")
 }
-```
-
-```go
-// register it 
-betOp := BetweenOperator{}
-RegisterOperator("between", betOp)
-
-// reset 
-ResetRegisterOperator()
-
-// overwrite Default Operator
-SetDefaultOperator(betOp)
-```
-
-#### Local scope Operator
-You also can defined local scope only operator, just use the struct and register like global scope. It support nested or not
-```go
-betOp := BetweenOperator{}
-kendoFilter := KendoFilter{}
-
-// register operator in it struct only
-kendoFilter.RegisterOperator("between", betOp)
-
-// register operator in it struct and all child filters
-kendoFilter.RegisterOperatorAll("between", betOp)
 ```
 
 ### Transforming filter
 Need modify your field? lowercase all field before processing? don't worry, you can use Transform to modify and apply to your all field. See [kendo_test.go](kendo_test.go)) for more uses
 ```go
+import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
+
 kendoFilter := KendoFilter{}
+parser := kpmongo.Parser{}
 
 // transform filter field or all field in filters into lower case
 kendoFilter.TransformField(strings.ToLower) // only current filter
@@ -225,13 +175,18 @@ kendoFilter.Transform(transformIDMongo) // only current filter
 kendoFilter.TransformAll(transformIDMongo) // include filters
 
 // chaining is possible
-kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).ToDboxFilter()
+kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).Parse(parser)
+
 ```
 
 ### Custom pre-filter
-You can also add custom single handler before building filter by registered operator. This approach you can add custom direct filter within loop filter. 
-For example you can direct create your custom filter when the field is "status" like below
+You can also add custom single handler before building filter by registered operator. This approach you can add custom direct filter within loop filter. pre-filter it self act same like parser, so you can chain the filter with other filter. But if your pre-filter already return value, the last parse only act return the value
 ```go
+import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
+
+parser := kpmongo.Parser{}
+beforeParser := kpmongo.Parser{}
+
 // dbox filter
 resultFilter := kendoFilter.TransformAllField(strings.ToLower).
     TransformAll(func(kf *KendoFilter) {
@@ -239,14 +194,8 @@ resultFilter := kendoFilter.TransformAllField(strings.ToLower).
             kf.Field = "_id"
         }
     }).
-    PreDboxFilterAll(func(kf *KendoFilter) *dbox.Filter {
-        if kf.Field == "status" {
-            // return your custom handler
-            return dbox.Eq(kf.Field, StringToBool(kf.Value, false))
-        }
-        return nil // pas nil to continue original filter
-    }).
-    ToDboxFilter()
+    BeforeParse(beforeParser).
+    Parse(parser)
 
 // reset if needed another
 kendoFilter.ResetPreFilter()
@@ -258,22 +207,18 @@ resultFilterPipe := kendoFilter.TransformAllField(strings.ToLower).
             kf.Field = "_id"
         }
     }).
-    PreDboxPipeAll(func(kf *KendoFilter) tk.M {
-        if kf.Field == "status" {
-            // return your custom handler
-            return tk.M{kf.Field: StringToBool(kf.Value, false)}
-        }
-        return nil // pas nil to continue original filter
-    }).
-    ToDboxPipe()
+    BeforeParse(beforeParser).
+    Parse(parser)
 ```
-currently we have 2 pre-filter handler, later we will have custom handler more dynamic if needed.
 
 ## Sort
 do you need sort? You can do it easly.
 ```go
-result := kData.Sort.ToDbox()
-resultPipe := kData.Sort.ToDboxPipe()
+import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
+
+parser := kpmongo.Parser{}
+
+sort := kData.Sort.Parse(parser)
 ```
 
 ## Contribute

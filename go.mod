@@ -10,6 +10,7 @@ require (
 	github.com/eaciit/toolkit v0.0.0-20190419225214-5847aedf1969
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/pretty v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.1.3
