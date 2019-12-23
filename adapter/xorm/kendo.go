@@ -1,11 +1,11 @@
 // helper parser for dboxpipe
-package xorm
+package kpxorm
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/raditzlawliet/gokendoparser"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"xorm.io/builder"
 )
@@ -82,13 +82,13 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 
 // ParserSort ParserSort
 func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
-	sorter := bson.D{}
+	sorter := []string{}
 	for _, ks := range *ksa {
-		sort := 1
+		sort := "ASC"
 		if strings.ToLower(ks.Dir) == "desc" {
-			sort = -1
+			sort = "DESC"
 		}
-		sorter = append(sorter, bson.E{ks.Field, sort})
+		sorter = append(sorter, fmt.Sprintf("%s %s", ks.Field, sort))
 	}
-	return sorter
+	return strings.Join(sorter, ", ")
 }
