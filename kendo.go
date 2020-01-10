@@ -86,8 +86,8 @@ func (kf *KendoFilter) BeforeParseAll(fs ...ParseFilter) *KendoFilter {
 }
 
 // Parse Parse will return interface
-func (kf *KendoFilter) Parse(f Parser) interface{} {
-	return f.ParseFilter(kf)
+func (kf *KendoFilter) Parse(f ParseFilter) interface{} {
+	return f(kf)
 }
 
 // ResetBeforeParse reset all pre-filter available
@@ -165,6 +165,6 @@ type KendoSort struct {
 type KendoSortArray []KendoSort
 
 // Parse Parse
-func (ksa *KendoSortArray) Parse(f Parser) interface{} {
-	return f.ParserSort(ksa)
+func (ksa *KendoSortArray) Parse(f ParseSort) interface{} {
+	return f(ksa)
 }

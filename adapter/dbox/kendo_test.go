@@ -19,7 +19,7 @@ func Test_ParseFilter(t *testing.T) {
 			Field: "_id", Operator: "eq", Value: "val",
 		}
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.Eq("_id", "val")
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -35,7 +35,7 @@ func Test_ParseFilter(t *testing.T) {
 		}`, &kendoRequest)
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(ParseFilter).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 
@@ -46,7 +46,7 @@ func Test_ParseFilter(t *testing.T) {
 			},
 			Logic: "and",
 		}
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Eq("_id", "val"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 	}
@@ -71,7 +71,7 @@ func Test_ParseFilter(t *testing.T) {
 			},
 			Logic: "and",
 		}
-		resultFilter := kendoFilter.Parse(Parser{})
+		resultFilter := kendoFilter.Parse(ParseFilter)
 		expectedFilter := dbox.And(
 			dbox.Or(
 				dbox.Eq("_id", "val"),
@@ -103,7 +103,7 @@ func Test_ParseFilter(t *testing.T) {
 			},
 			Logic: "and",
 		}
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		testTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
 		expectedFilter := dbox.And(
 			dbox.Eq("_id", "val"),
@@ -136,7 +136,7 @@ func Test_TransformField(t *testing.T) {
 		}
 		kendoFilter.TransformField(strings.ToLower)
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.Eq("_id", "val")
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -154,7 +154,7 @@ func Test_TransformField(t *testing.T) {
 
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(ParseFilter).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 
@@ -181,7 +181,7 @@ func Test_TransformField(t *testing.T) {
 			Logic: "and",
 		}
 		kendoFilter.TransformField(strings.ToLower)
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(
 			dbox.Or(
 				dbox.Eq("_ID", "val"),
@@ -218,7 +218,7 @@ func Test_TransformField(t *testing.T) {
 			Logic: "and",
 		}
 		kendoFilter.TransformAllField(strings.ToLower)
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(
 			dbox.Or(
 				dbox.Eq("_id", "val"),
@@ -246,7 +246,7 @@ func Test_Transform(t *testing.T) {
 			}
 		})
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.Eq("_id", "val")
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -269,7 +269,7 @@ func Test_Transform(t *testing.T) {
 
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(ParseFilter).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 
@@ -300,7 +300,7 @@ func Test_Transform(t *testing.T) {
 				kf.Field = "_id"
 			}
 		})
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(
 			dbox.Or(
 				dbox.Eq("ID", "val"),
@@ -342,7 +342,7 @@ func Test_Transform(t *testing.T) {
 				kf.Field = "_id"
 			}
 		})
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(
 			dbox.Or(
 				dbox.Eq("_id", "val"),
@@ -393,7 +393,7 @@ func Test_PreFilterHandler(t *testing.T) {
 				}
 				return nil // pas nil to continue original filter
 			}).
-			Parse(Parser{}).(*dbox.Filter)
+			Parse(ParseFilter).(*dbox.Filter)
 
 		// reset if needed another
 		kendoFilter.ResetBeforeParseAll()
@@ -431,7 +431,7 @@ func Test_Sort(t *testing.T) {
 		}
 
 		// try dbox filter
-		result := kData.Sort.Parse(Parser{}).([]string)
+		result := kData.Sort.Parse(ParseSort).([]string)
 		expected := []string{"-foo", "bar", "-_id"}
 		require.Equal(t, expected, result, "Result must same")
 	}

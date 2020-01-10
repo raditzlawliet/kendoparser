@@ -10,11 +10,11 @@ import (
 )
 
 // Parser Parser
-type Parser struct{}
+// type Parser struct{}
 
 // ParseFilter convert KendoFilter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
+func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// single filter
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
@@ -48,7 +48,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// so filters has some values
 	filters := []*dbflex.Filter{}
 	for _, kFilterChild := range kf.Filters {
-		filter := parser.ParseFilter(&kFilterChild)
+		filter := ParseFilter(&kFilterChild)
 		if filter != nil {
 			filters = append(filters, filter.(*dbflex.Filter))
 		}
@@ -64,7 +64,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 }
 
 // ParserSort return []string
-func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
+func ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
 	sorter := []string{}
 	for _, ks := range *ksa {
 		if strings.ToLower(ks.Dir) == "desc" {

@@ -17,7 +17,7 @@ func Test_ParseFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter := kendoFilter.Parse(Parser{})
+	resultFilter := kendoFilter.Parse(ParseFilter)
 	expectedFilter := builder.And(
 		builder.Eq{"_id": "val"},
 	)
@@ -45,7 +45,7 @@ func Test_ParseFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.Parse(Parser{})
+	resultFilter = kendoFilter.Parse(ParseFilter)
 
 	expectedFilter = builder.And(
 		builder.Or(
@@ -77,7 +77,7 @@ func Test_ParseFilter(t *testing.T) {
 	// 	},
 	// 	Logic: "and",
 	// }
-	// resultFilter = kendoFilter.Parse(Parser{}).(bson.D)
+	// resultFilter = kendoFilter.Parse(ParseFilter).(bson.D)
 	// testTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
 
 	// expectedFilter = bson.D{
@@ -135,7 +135,7 @@ func Test_ParseFilter(t *testing.T) {
 // 					return bson.M{kf.Field: helper.StringToBool(kf.Value, false)}
 // 				}
 // 				return nil // pas nil to continue original filter
-// 			}).Parse(Parser{}).(bson.D)
+// 			}).Parse(ParseFilter).(bson.D)
 
 // 		expectedFilter := bson.D{
 // 			{
@@ -176,7 +176,7 @@ func Test_Sort(t *testing.T) {
 		}
 
 		// try dbox filter
-		result := kData.Sort.Parse(Parser{})
+		result := kData.Sort.Parse(ParseSort)
 		expectedPipe := strings.Join([]string{
 			"foo DESC", "bar ASC", "_id DESC",
 		}, ", ")

@@ -10,11 +10,11 @@ import (
 )
 
 // Parser Parser
-type Parser struct{}
+// type Parser struct{}
 
 // ParseFilter convert KendoFilter into M for pipe combination automaticly
 // return can @Nullable if filter and filters empty
-func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
+func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// defaultFilter := toolkit.M{"_id": toolkit.M{"$exists": true}}
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
@@ -60,7 +60,7 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// so filters has some values
 	filters := []toolkit.M{}
 	for _, kFilterChild := range kf.Filters {
-		filter := parser.ParseFilter(&kFilterChild)
+		filter := ParseFilter(&kFilterChild)
 		if filter != nil {
 			filters = append(filters, filter.(toolkit.M))
 		}
@@ -76,8 +76,8 @@ func (parser Parser) ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	return nil
 }
 
-// ParserSort ParserSort
-func (parser Parser) ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
+// ParseSort ParseSort
+func ParseSort(ksa *gokendoparser.KendoSortArray) interface{} {
 	sorter := bson.D{}
 	for _, ks := range *ksa {
 		sort := 1

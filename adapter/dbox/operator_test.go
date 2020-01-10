@@ -20,7 +20,7 @@ func Test_OperatorHook(t *testing.T) {
 			Field: "_id", Operator: "eq", Value: "val",
 		}
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.Eq("_id", "val")
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -36,7 +36,7 @@ func Test_OperatorHook(t *testing.T) {
 		}`, &kendoRequest)
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(ParseFilter).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 
@@ -46,7 +46,7 @@ func Test_OperatorHook(t *testing.T) {
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -62,7 +62,7 @@ func Test_OperatorHook(t *testing.T) {
 		}`, &kendoRequest)
 		require.Nil(t, e, "Json parse must work")
 		require.Equal(t, kendoFilter, kendoRequest.Data.Filter, "Filter must same")
-		resultFilterJSON := kendoRequest.Data.Filter.Parse(Parser{}).(*dbox.Filter)
+		resultFilterJSON := kendoRequest.Data.Filter.Parse(ParseFilter).(*dbox.Filter)
 		require.Equal(t, expectedFilter, resultFilterJSON, "Result dbox filter must same")
 	}
 }
@@ -76,7 +76,7 @@ func Test_OperatorHookLocalScope(t *testing.T) {
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.Eq("v", "") // because between not registered YET
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 
@@ -92,7 +92,7 @@ func Test_OperatorHookLocalScope(t *testing.T) {
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 	}
@@ -115,7 +115,7 @@ func Test_OperatorHookLocalScope(t *testing.T) {
 			Logic: "and",
 		}
 
-		resultFilter := kendoFilter.RegisterOperatorAll(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.RegisterOperatorAll(betOp, "between_custom").Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter :=
 			dbox.And(
 				dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2")),
@@ -134,7 +134,7 @@ func Test_OperatorHookLocalScope(t *testing.T) {
 			Field: "v", Operator: "between_custom", Values: []interface{}{"1", "2"},
 		}
 
-		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(Parser{}).(*dbox.Filter)
+		resultFilter := kendoFilter.RegisterOperator(betOp, "between_custom").Parse(ParseFilter).(*dbox.Filter)
 		expectedFilter := dbox.And(dbox.Gte("v", "1"), dbox.Lte("v", "2"))
 		require.Equal(t, expectedFilter, resultFilter, "Result dbox filter must same")
 	}

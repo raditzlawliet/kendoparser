@@ -19,7 +19,7 @@ func Test_ParseFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter := kendoFilter.Parse(Parser{}).(tk.M)
+	resultFilter := kendoFilter.Parse(ParseFilter).(tk.M)
 	expectedFilter := tk.M{"$and": []tk.M{tk.M{"_id": tk.M{"$eq": "val"}}}}
 	require.Equal(t, expectedFilter, resultFilter, "Result filter must same")
 
@@ -42,7 +42,7 @@ func Test_ParseFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.Parse(Parser{}).(tk.M)
+	resultFilter = kendoFilter.Parse(ParseFilter).(tk.M)
 	expectedFilter = tk.M{"$and": []tk.M{
 		tk.M{"$or": []tk.M{
 			tk.M{"_id": tk.M{"$eq": "val"}},
@@ -70,7 +70,7 @@ func Test_ParseFilter(t *testing.T) {
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.Parse(Parser{}).(tk.M)
+	resultFilter = kendoFilter.Parse(ParseFilter).(tk.M)
 	testTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
 	expectedFilter = tk.M{"$and": []tk.M{
 		tk.M{"_id": tk.M{"$eq": "val"}},
@@ -123,7 +123,7 @@ func Test_PreFilterHandler(t *testing.T) {
 					return tk.M{kf.Field: helper.StringToBool(kf.Value, false)}
 				}
 				return nil // pas nil to continue original filter
-			}).Parse(Parser{}).(tk.M)
+			}).Parse(ParseFilter).(tk.M)
 
 		expectedFilterPipe := tk.M{"$and": []tk.M{
 			tk.M{"$or": []tk.M{
@@ -159,7 +159,7 @@ func Test_Sort(t *testing.T) {
 		}
 
 		// try dbox filter
-		result := kData.Sort.Parse(Parser{}).(bson.D)
+		result := kData.Sort.Parse(ParseSort).(bson.D)
 
 		expectedPipe := bson.D{
 			bson.DocElem{
