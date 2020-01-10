@@ -59,9 +59,8 @@ payload := KendoRequest {
     },
 }
 
-parser := kpmongo.Parser{}
-filter := payload.Data.Filter.Parse(parser)
-sort := payload.Data.Sort.Parse(parser)
+filter := payload.Data.Filter.Parse(kpmongo.ParseFilter)
+sort := payload.Data.Sort.Parse(kpmongo.ParseSort)
 ```
 
 #### More JSON
@@ -114,9 +113,8 @@ payload := KendoRequest {
     },
 }
 
-parser := kpmongo.Parser{}
-filter := payload.Data.Filter.Parse(parser)
-sort := payload.Data.Sort.Parse(parser)
+filter := payload.Data.Filter.Parse(kpmongo.ParseFilter)
+sort := payload.Data.Sort.Parse(kpmongo.ParseSort)
 ```
 
 ### Extend & Hook custom operator handler
@@ -159,7 +157,6 @@ Need modify your field? lowercase all field before processing? don't worry, you 
 import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
 
 kendoFilter := KendoFilter{}
-parser := kpmongo.Parser{}
 
 // transform filter field or all field in filters into lower case
 kendoFilter.TransformField(strings.ToLower) // only current filter
@@ -175,7 +172,7 @@ kendoFilter.Transform(transformIDMongo) // only current filter
 kendoFilter.TransformAll(transformIDMongo) // include filters
 
 // chaining is possible
-kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).Parse(parser)
+kendoFilter.TransformFieldAll(strings.ToLower).TransformAll(transformIDMongo).Parse(kpmongo.ParseFilter)
 
 ```
 
@@ -184,8 +181,9 @@ You can also add custom single handler before building filter by registered oper
 ```go
 import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
 
-parser := kpmongo.Parser{}
-beforeParser := kpmongo.Parser{}
+beforeFilter := func (kf *KendoFilter) interface{} {
+    return nil
+}
 
 // dbox filter
 resultFilter := kendoFilter.TransformAllField(strings.ToLower).
@@ -194,8 +192,8 @@ resultFilter := kendoFilter.TransformAllField(strings.ToLower).
             kf.Field = "_id"
         }
     }).
-    BeforeParse(beforeParser).
-    Parse(parser)
+    BeforeParse(beforeFilter).
+    Parse(kpmongo.ParseFilter)
 
 // reset if needed another
 kendoFilter.ResetPreFilter()
@@ -207,8 +205,8 @@ resultFilterPipe := kendoFilter.TransformAllField(strings.ToLower).
             kf.Field = "_id"
         }
     }).
-    BeforeParse(beforeParser).
-    Parse(parser)
+    BeforeParse(beforeFilter).
+    Parse(kpmongo.ParseFilter)
 ```
 
 ## Sort
@@ -216,9 +214,7 @@ do you need sort? You can do it easly.
 ```go
 import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
 
-parser := kpmongo.Parser{}
-
-sort := kData.Sort.Parse(parser)
+sort := kData.Sort.Parse(kpmongo.ParseSort)
 ```
 
 ## Contribute
