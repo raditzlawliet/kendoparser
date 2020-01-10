@@ -5,6 +5,7 @@ import (
 
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
+	"github.com/spf13/cast"
 	"xorm.io/builder"
 )
 
@@ -102,20 +103,20 @@ func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 // Filter Filter
 func (ContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	if kf.IgnoreCase {
-		return LikeCi{kf.Field, kf.Value}
+		return LikeCi{kf.Field, cast.ToString(kf.Value)}
 	}
-	return builder.Like{kf.Value, kf.Value}
+	return builder.Like{cast.ToString(kf.Value), cast.ToString(kf.Value)}
 }
 
 // Filter Filter
 func (NotContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	if kf.IgnoreCase {
 		return builder.Not{
-			LikeCi{kf.Field, kf.Value},
+			LikeCi{kf.Field, cast.ToString(kf.Value)},
 		}
 	}
 	return builder.Not{
-		builder.Like{kf.Value, kf.Value},
+		builder.Like{cast.ToString(kf.Value), cast.ToString(kf.Value)},
 	}
 }
 
@@ -146,19 +147,19 @@ func (LteOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (GteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return builder.Gte{kf.Field: dtVariable}
 }
 
 // Filter Filter
 func (LteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return builder.Lte{kf.Field: dtVariable}
 }
 
 // Filter Filter
 func (ExistsOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	if helper.StringToBool(kf.Value, false) {
+	if helper.StringToBool(cast.ToString(kf.Value), false) {
 		return builder.NotNull{kf.Field}
 	}
 	return builder.IsNull{kf.Field}

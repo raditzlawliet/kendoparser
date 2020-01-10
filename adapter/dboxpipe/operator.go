@@ -9,6 +9,8 @@ import (
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/spf13/cast"
 )
 
 var (
@@ -82,7 +84,7 @@ type BetweenOp struct{}
 // Filter Filter
 func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	if kf.IgnoreCase {
-		value := regexp.QuoteMeta(kf.Value)
+		value := regexp.QuoteMeta(cast.ToString(kf.Value))
 		return toolkit.M{kf.Field: bson.RegEx{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
 	}
 	return toolkit.M{kf.Field: toolkit.M{"$eq": kf.Value}}
@@ -95,12 +97,12 @@ func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (ContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return toolkit.M{kf.Field: helper.RegexContains(kf.Value, kf.IgnoreCase)}
+	return toolkit.M{kf.Field: helper.RegexContains(cast.ToString(kf.Value), kf.IgnoreCase)}
 }
 
 // Filter Filter
 func (NotContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return toolkit.M{kf.Field: toolkit.M{"$ne": helper.RegexContains(kf.Value, kf.IgnoreCase)}}
+	return toolkit.M{kf.Field: toolkit.M{"$ne": helper.RegexContains(cast.ToString(kf.Value), kf.IgnoreCase)}}
 }
 
 // Filter Filter
@@ -120,19 +122,19 @@ func (LteOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (GteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return toolkit.M{kf.Field: toolkit.M{"$gte": dtVariable}}
 }
 
 // Filter Filter
 func (LteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return toolkit.M{kf.Field: toolkit.M{"$lte": dtVariable}}
 }
 
 // Filter Filter
 func (ExistsOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return toolkit.M{kf.Field: toolkit.M{"$exists": helper.StringToBool(kf.Value, false)}}
+	return toolkit.M{kf.Field: toolkit.M{"$exists": helper.StringToBool(cast.ToString(kf.Value), false)}}
 }
 
 // Filter Filter

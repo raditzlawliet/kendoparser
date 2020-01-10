@@ -9,6 +9,8 @@ import (
 	"github.com/raditzlawliet/gokendoparser/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/spf13/cast"
 )
 
 var (
@@ -82,7 +84,7 @@ type BetweenOp struct{}
 // Filter Filter
 func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	if kf.IgnoreCase {
-		value := regexp.QuoteMeta(kf.Value)
+		value := regexp.QuoteMeta(cast.ToString(kf.Value))
 		return bson.M{kf.Field: primitive.Regex{Pattern: "^" + strings.ToLower(value) + "$", Options: "i"}}
 	}
 	return bson.M{kf.Field: bson.M{"$eq": kf.Value}}
@@ -95,12 +97,12 @@ func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (ContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return bson.M{kf.Field: RegexContains(kf.Value, kf.IgnoreCase)}
+	return bson.M{kf.Field: RegexContains(cast.ToString(kf.Value), kf.IgnoreCase)}
 }
 
 // Filter Filter
 func (NotContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return bson.M{kf.Field: bson.M{"$ne": RegexContains(kf.Value, kf.IgnoreCase)}}
+	return bson.M{kf.Field: bson.M{"$ne": RegexContains(cast.ToString(kf.Value), kf.IgnoreCase)}}
 }
 
 // Filter Filter
@@ -120,19 +122,19 @@ func (LteOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (GteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return bson.M{kf.Field: bson.M{"$gte": dtVariable}}
 }
 
 // Filter Filter
 func (LteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return bson.M{kf.Field: bson.M{"$lte": dtVariable}}
 }
 
 // Filter Filter
 func (ExistsOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return bson.M{kf.Field: bson.M{"$exists": helper.StringToBool(kf.Value, false)}}
+	return bson.M{kf.Field: bson.M{"$exists": helper.StringToBool(cast.ToString(kf.Value), false)}}
 }
 
 // Filter Filter

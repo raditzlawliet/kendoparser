@@ -33,7 +33,7 @@ type KendoFilter struct {
 	Field      string        `json:"field"`
 	Operator   string        `json:"operator"`
 	IgnoreCase bool          `json:"ignoreCase"`
-	Value      string        `json:"value"`
+	Value      interface{}   `json:"value"`
 	Values     []interface{} `json:"values"`
 
 	// will not change the original value

@@ -8,6 +8,8 @@ import (
 	"github.com/eaciit/toolkit"
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
+
+	"github.com/spf13/cast"
 )
 
 var (
@@ -90,12 +92,12 @@ func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (ContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	return dbox.Contains(kf.Field, kf.Value)
+	return dbox.Contains(kf.Field, cast.ToString(kf.Value))
 }
 
 // Filter Filter
 func (NotContainOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	value := regexp.QuoteMeta(kf.Value)
+	value := regexp.QuoteMeta(cast.ToString(kf.Value))
 	return &dbox.Filter{
 		Field: kf.Field,
 		Op:    dbox.FilterOpEqual, // equal are field = value and can be manipulate for others
@@ -123,13 +125,13 @@ func (LteOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (GteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbox.Gte(kf.Field, dtVariable)
 }
 
 // Filter Filter
 func (LteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbox.Lte(kf.Field, dtVariable)
 }
 
@@ -139,7 +141,7 @@ func (ExistsOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 		Field: kf.Field,
 		Op:    dbox.FilterOpEqual,
 		Value: toolkit.M{
-			"$exists": helper.StringToBool(kf.Value, false),
+			"$exists": helper.StringToBool(cast.ToString(kf.Value), false),
 		},
 	}
 }

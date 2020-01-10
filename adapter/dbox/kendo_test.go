@@ -9,6 +9,7 @@ import (
 	tk "github.com/eaciit/toolkit"
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 )
 
@@ -389,7 +390,7 @@ func Test_PreFilterHandler(t *testing.T) {
 			BeforeParseAll(func(kf *gokendoparser.KendoFilter) interface{} {
 				if kf.Field == "status" {
 					// return your custom handler
-					return dbox.Eq(kf.Field, helper.StringToBool(kf.Value, false))
+					return dbox.Eq(kf.Field, helper.StringToBool(cast.ToString(kf.Value), false))
 				}
 				return nil // pas nil to continue original filter
 			}).

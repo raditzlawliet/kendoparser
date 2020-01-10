@@ -7,6 +7,7 @@ import (
 
 	"github.com/raditzlawliet/gokendoparser"
 	"github.com/raditzlawliet/gokendoparser/helper"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -135,7 +136,7 @@ func Test_PreFilterHandler(t *testing.T) {
 			BeforeParseAll(func(kf *gokendoparser.KendoFilter) interface{} {
 				if kf.Field == "status" {
 					// return your custom handler
-					return bson.M{kf.Field: helper.StringToBool(kf.Value, false)}
+					return bson.M{kf.Field: helper.StringToBool(cast.ToString(kf.Value), false)}
 				}
 				return nil // pas nil to continue original filter
 			}).Parse(ParseFilter).(bson.D)

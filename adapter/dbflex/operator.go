@@ -6,6 +6,8 @@ import (
 	"git.eaciitapp.com/sebar/dbflex"
 
 	"github.com/raditzlawliet/gokendoparser"
+
+	"github.com/spf13/cast"
 )
 
 var (
@@ -129,25 +131,25 @@ func (LteOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 
 // Filter Filter
 func (GtDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbflex.Gt(kf.Field, dtVariable)
 }
 
 // Filter Filter
 func (GteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbflex.Gte(kf.Field, dtVariable)
 }
 
 // Filter Filter
 func (LtDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbflex.Lt(kf.Field, dtVariable)
 }
 
 // Filter Filter
 func (LteDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
-	dtVariable, _ := time.Parse(time.RFC3339, kf.Value)
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
 	return dbflex.Lte(kf.Field, dtVariable)
 }
 
