@@ -34,7 +34,8 @@ func RegisterOperator() {
 	operatorManager.SetDefaultOperator(equalOp)
 	operatorManager.RegisterOperator(equalOp, "eq", "equal")
 	operatorManager.RegisterOperator(notEqualOp, "ne", "neq", "notequal")
-	operatorManager.RegisterOperator(containOp, "contain", "contains")
+	operatorManager.RegisterOperator(containOp, "contain", "contains", "include", "includes")
+	// operatorManager.RegisterOperator(notContainOp, "notcontains", "notcontains", "doesnotcontain", "doesnotcontains", "notinclude", "notincludes", "doesnotinclude", "doesnotincludes") // not supported yet
 	operatorManager.RegisterOperator(inOp, "in")
 	operatorManager.RegisterOperator(gtOp, "gt")
 	operatorManager.RegisterOperator(gteOp, "gte")
