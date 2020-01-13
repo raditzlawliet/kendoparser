@@ -161,6 +161,6 @@ func RegexContains(value string, ignoreCase bool) primitive.Regex {
 	if ignoreCase {
 		return primitive.Regex{Pattern: "" + strings.ToLower(value) + "", Options: "i"}
 	} else {
-		return primitive.Regex{Pattern: "" + strings.ToLower(value) + "", Options: ""}
+		return primitive.Regex{Pattern: "" + value + "", Options: ""}
 	}
 }
