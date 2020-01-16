@@ -17,6 +17,8 @@ var (
 	operatorManager = gokendoparser.OperatorManager{}
 	equalOp         = EqualOp{}
 	notEqualOp      = NotEqualOp{}
+	equalDateOp     = EqualDateOp{}
+	notEqualDateOp  = NotEqualDateOp{}
 	containOp       = ContainOp{}
 	notContainOp    = NotContainOp{}
 	inOp            = InOp{}
@@ -37,6 +39,8 @@ func RegisterOperator() {
 	operatorManager.SetDefaultOperator(equalOp)
 	operatorManager.RegisterOperator(equalOp, "eq", "equal")
 	operatorManager.RegisterOperator(notEqualOp, "ne", "neq", "notequal")
+	operatorManager.RegisterOperator(equalDateOp, "eqdate", "equaldate")
+	operatorManager.RegisterOperator(notEqualDateOp, "nedate", "neqdate", "notequaldate")
 	operatorManager.RegisterOperator(containOp, "contain", "contains", "include", "includes")
 	operatorManager.RegisterOperator(notContainOp, "notcontains", "notcontains", "doesnotcontain", "doesnotcontains", "notinclude", "notincludes", "doesnotinclude", "doesnotincludes")
 	operatorManager.RegisterOperator(inOp, "in")
@@ -53,6 +57,12 @@ type EqualOp struct{}
 
 // NotEqualOp NotEqualOp
 type NotEqualOp struct{}
+
+//EqualOp EqualOp
+type EqualDateOp struct{}
+
+// NotEqualOp NotEqualOp
+type NotEqualDateOp struct{}
 
 // ContainOp ContainOp
 type ContainOp struct{}
@@ -93,6 +103,18 @@ func (EqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 // Filter Filter
 func (NotEqualOp) Filter(kf gokendoparser.KendoFilter) interface{} {
 	return bson.M{kf.Field: bson.M{"$ne": kf.Value}}
+}
+
+// Filter Filter
+func (EqualDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
+	return bson.M{kf.Field: bson.M{"$eq": dtVariable}}
+}
+
+// Filter Filter
+func (NotEqualDateOp) Filter(kf gokendoparser.KendoFilter) interface{} {
+	dtVariable, _ := time.Parse(time.RFC3339, cast.ToString(kf.Value))
+	return bson.M{kf.Field: bson.M{"$ne": dtVariable}}
 }
 
 // Filter Filter
