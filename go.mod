@@ -19,4 +19,4 @@ require (
 	xorm.io/builder v0.3.6
 )
 
-exclude git.eaciitapp.com/sebar/dbflex v0.0.0-20200114235008-9638ae161f0f
+// exclude git.eaciitapp.com/sebar/dbflex v0.0.0-20200114235008-9638ae161f0f

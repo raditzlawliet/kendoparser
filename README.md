@@ -8,7 +8,7 @@
 Your Golang Kendo parser, parsing Kendo data source request to golang struct immediately. Available parser to
 - [eaciit/dbox Filter](https://github.com/eaciit/dbox)
 - [eaciit/dbox Pipe or Aggregation type](https://github.com/eaciit/dbox)
-- eaciit/dbflux Filter
+- sebar/dbflex Filter
 - [mongo-go-driver Filter](https://github.com/mongodb/mongo-go-driver/)
 - [xorm/builder Filter](https://gitea.com/xorm/builder/) This builder have nice ToSQL function, so you can transform into SQL 
 

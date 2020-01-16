@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	operatorManager = gokendoparser.OperatorManager{}
+	operatorManager = new(gokendoparser.OperatorManager)
 	equalOp         = EqualOp{}
 	notEqualOp      = NotEqualOp{}
 	containOp       = ContainOp{}
@@ -46,6 +46,11 @@ func RegisterOperator() {
 	operatorManager.RegisterOperator(lteDateOp, "ltedate")
 	operatorManager.RegisterOperator(existsOp, "exist", "exists")
 	operatorManager.RegisterOperator(betweenOp, "between")
+}
+
+// GetOperatorManager Get Operator Manager
+func GetOperatorManager() *gokendoparser.OperatorManager {
+	return operatorManager
 }
 
 //EqualOp EqualOp
