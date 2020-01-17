@@ -217,6 +217,14 @@ import kpmgo "github.com/raditzlawliet/gokendoparser/adapter/mgo"
 sort := kData.Sort.Parse(kpmongo.ParseSort)
 ```
 
+## FAQ
+- ### go mod tidy keep error `git.eaciitapp.com/sebar/dbflex: no matching versions for query "latest"`
+
+    Modify go.mod file, if you dont have the package, just use this dummy in your go.mod, AND If you have the package and using it, replace it into your correct path package:
+    
+    ```replace git.eaciitapp.com/sebar/dbflex => ./pkg/git.eaciitapp.com/sebar/dbflex```
+
+
 ## Contribute
 Feel free to contribute, don't forget to mention if needed
 

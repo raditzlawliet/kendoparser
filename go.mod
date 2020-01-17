@@ -3,7 +3,7 @@ module github.com/raditzlawliet/gokendoparser
 go 1.13
 
 require (
-	git.eaciitapp.com/sebar/dbflex v0.0.0-20200114235008-9638ae161f0f
+	git.eaciitapp.com/sebar/dbflex v0.0.0-00010101000000-000000000000
 	github.com/eaciit/cast v0.0.0-20160225070732-c06c4b07187e // indirect
 	github.com/eaciit/dbox v0.0.0-20180917055501-9a504bed8cc5
 	github.com/eaciit/errorlib v0.0.0-20150626203730-179dfd7a1051 // indirect
@@ -19,4 +19,4 @@ require (
 	xorm.io/builder v0.3.6
 )
 
-// exclude git.eaciitapp.com/sebar/dbflex v0.0.0-20200114235008-9638ae161f0f
+replace git.eaciitapp.com/sebar/dbflex => ./pkg/git.eaciitapp.com/sebar/dbflex
