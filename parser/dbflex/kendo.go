@@ -6,49 +6,47 @@ import (
 
 	"git.eaciitapp.com/sebar/dbflex"
 
-	"github.com/raditzlawliet/gokendoparser"
+	"github.com/raditzlawliet/kendoparser"
 )
 
-// Parser Parser
-// type Parser struct{}
-
-// ParseFilter convert KendoFilter into *dbox.Filter combination automaticly
+// FilterParser convert Filter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
+func FilterParser(kf *kendoparser.Filter) interface{} {
 	// single filter
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
 		ckFilter := *kf
 
 		// very customable handler
-		if kf.GetBeforeParse() != nil {
-			for _, handler := range kf.GetBeforeParse() {
+		if kf.AdditionalParsers() != nil {
+			for _, handler := range kf.AdditionalParsers() {
 				if r := handler(&ckFilter); r != nil {
 					return r
 				}
 			}
 		}
 
-		// local scope operator
-		if kf.GetRegisteredOperators() != nil {
-			if opHandler, ok := kf.GetRegisteredOperators()[kf.Operator]; ok && opHandler != nil {
-				return opHandler.Filter(ckFilter)
+		// (scoped)
+		if om := kf.GetOperatorManager(); om != nil {
+			// parser scope registered
+			if opHandler, ok := OperatorManager.OperatorFilters[kf.Operator]; ok {
+				return opHandler(ckFilter)
 			}
 		}
 
-		// parser scope registered
-		if opHandler, ok := operatorManager.RegisteredOperators[kf.Operator]; ok {
-			return opHandler.Filter(ckFilter)
+		// (global)
+		if opHandler, ok := OperatorManager.OperatorFilters[kf.Operator]; ok {
+			return opHandler(ckFilter)
 		}
 
-		// global defult
-		return operatorManager.DefaultOperator.Filter(ckFilter)
+		// default (global)
+		return OperatorManager.DefaultOperatorFilter(ckFilter)
 	}
 
 	// so filters has some values
 	filters := []*dbflex.Filter{}
 	for _, kFilterChild := range kf.Filters {
-		filter := ParseFilter(&kFilterChild)
+		filter := FilterParser(&kFilterChild)
 		if filter != nil {
 			filters = append(filters, filter.(*dbflex.Filter))
 		}
@@ -64,7 +62,7 @@ func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 }
 
 // ParserSort return []string
-func ParserSort(ksa *gokendoparser.KendoSortArray) interface{} {
+func ParserSort(ksa *kendoparser.Sort) interface{} {
 	sorter := []string{}
 	for _, ks := range *ksa {
 		if strings.ToLower(ks.Dir) == "desc" {

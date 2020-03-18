@@ -1,10 +1,10 @@
-module github.com/raditzlawliet/gokendoparser
+module github.com/raditzlawliet/kendoparser
 
 go 1.13
 
 require (
 	git.eaciitapp.com/sebar/dbflex v0.0.0-00010101000000-000000000000
-	github.com/eaciit/cast v0.0.0-20160225070732-c06c4b07187e // indirect
+	github.com/eaciit/cast v0.0.0-20160225070732-c06c4b07187e
 	github.com/eaciit/dbox v0.0.0-20180917055501-9a504bed8cc5
 	github.com/eaciit/errorlib v0.0.0-20150626203730-179dfd7a1051 // indirect
 	github.com/eaciit/toolkit v0.0.0-20191214194902-30b3fd1abbf4

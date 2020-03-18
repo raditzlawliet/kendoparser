@@ -11,10 +11,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-// RegisteredOperators a global list registered operator, will use in all kendo, you can overwrite in struct scope if needed
+// OperatorFilters a global list registered operator, will use in all kendo, you can overwrite in struct scope if needed
 var RegisteredOperators = map[string]Operator{}
 
-// DefaultOperator will call if registerd not found, default operator is equa
+// DefaultOperatorFilter will call if registerd not found, default operator is equa
 var DefaultOperator Operator = EqualOp{}
 
 var mutex = &sync.Mutex{}

@@ -1,30 +1,27 @@
-package gokendoparser
+package kendoparser
 
 import (
 	"sync"
 )
 
-// Operator basic interface of OperatorHander will have 2 of this func
-type Operator interface {
-	Filter(KendoFilter) interface{}
-}
+type OperatorFilter func(Filter) interface{}
 
 // OperatorManager OperatorManager
 type OperatorManager struct {
-	DefaultOperator     Operator
-	RegisteredOperators map[string]Operator
-	mutex               sync.Mutex
+	DefaultOperatorFilter OperatorFilter
+	OperatorFilters       map[string]OperatorFilter
+	mutex                 sync.Mutex
 }
 
 // RegisterOperator register operator with safe
-func (om *OperatorManager) RegisterOperator(f Operator, ops ...string) {
+func (om *OperatorManager) RegisterOperator(f OperatorFilter, ops ...string) {
 	om.mutex.Lock()
 	for _, op := range ops {
 		if op != "" {
-			if om.RegisteredOperators == nil {
-				om.RegisteredOperators = map[string]Operator{}
+			if om.OperatorFilters == nil {
+				om.OperatorFilters = map[string]OperatorFilter{}
 			}
-			om.RegisteredOperators[op] = f
+			om.OperatorFilters[op] = f
 		}
 	}
 	om.mutex.Unlock()
@@ -33,20 +30,13 @@ func (om *OperatorManager) RegisterOperator(f Operator, ops ...string) {
 // Reset resetting global register (if needed)
 func (om *OperatorManager) Reset() {
 	om.mutex.Lock()
-	om.RegisteredOperators = map[string]Operator{}
+	om.OperatorFilters = map[string]OperatorFilter{}
 	om.mutex.Unlock()
 }
 
 //SetDefaultOperator by default, if no operator found, will use this instead
-func (om *OperatorManager) SetDefaultOperator(f Operator) {
+func (om *OperatorManager) SetDefaultOperator(f OperatorFilter) {
 	om.mutex.Lock()
-	om.DefaultOperator = f
+	om.DefaultOperatorFilter = f
 	om.mutex.Unlock()
-}
-
-// RegisterTo RegisterTo
-func (om *OperatorManager) RegisterTo(k *KendoRequest) {
-	for op, fop := range om.RegisteredOperators {
-		k.RegisterOperatorAll(fop, op)
-	}
 }

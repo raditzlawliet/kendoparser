@@ -5,33 +5,33 @@ import (
 	"strings"
 
 	"github.com/eaciit/dbox"
-	"github.com/raditzlawliet/gokendoparser"
+	"github.com/raditzlawliet/kendoparser"
 )
 
 // Parser Parser
 // type Parser struct{}
 
-// ParseFilter convert KendoFilter into *dbox.Filter combination automaticly
+// FilterParser convert Filter into *dbox.Filter combination automaticly
 // return can @Nullable if filter and filters empty
-func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
+func FilterParser(kf *kendoparser.Filter) interface{} {
 	// single filter
 	if len(kf.Filters) == 0 {
 		// processing will use copy instead to avoid change original value
 		ckFilter := *kf
 
 		// very customable handler
-		if kf.GetBeforeParse() != nil {
-			for _, handler := range kf.GetBeforeParse() {
+		if kf.AdditionalParsers() != nil {
+			for _, handler := range kf.AdditionalParsers() {
 				if r := handler(&ckFilter); r != nil {
 					return r
 				}
 			}
 		}
 
-		// local scope operator
-		if kf.GetRegisteredOperators() != nil {
-			if opHandler, ok := kf.GetRegisteredOperators()[kf.Operator]; ok && opHandler != nil {
-				f := opHandler.Filter(ckFilter)
+		// (scoped)
+		if om := kf.GetOperatorManager(); om != nil {
+			if opHandler, ok := om.OperatorFilters[kf.Operator]; ok {
+				f := opHandler(ckFilter)
 				if f != nil {
 					return f.(*dbox.Filter)
 				}
@@ -39,17 +39,17 @@ func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 			}
 		}
 
-		// parser scope registered
-		if opHandler, ok := operatorManager.RegisteredOperators[kf.Operator]; ok {
-			f := opHandler.Filter(ckFilter)
+		// (global)
+		if opHandler, ok := OperatorManager.OperatorFilters[kf.Operator]; ok {
+			f := opHandler(ckFilter)
 			if f != nil {
 				return f.(*dbox.Filter)
 			}
 			return nil
 		}
 
-		// // global defult
-		f := operatorManager.DefaultOperator.Filter(ckFilter)
+		// default (global)
+		f := OperatorManager.DefaultOperatorFilter(ckFilter)
 		if f != nil {
 			return f.(*dbox.Filter)
 		}
@@ -59,7 +59,7 @@ func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	// so filters has some values
 	dboxFilters := []*dbox.Filter{}
 	for _, kFilterChild := range kf.Filters {
-		dboxFilter := ParseFilter(&kFilterChild)
+		dboxFilter := FilterParser(&kFilterChild)
 		if dboxFilter != nil {
 			dboxFilters = append(dboxFilters, dboxFilter.(*dbox.Filter))
 		}
@@ -74,8 +74,8 @@ func ParseFilter(kf *gokendoparser.KendoFilter) interface{} {
 	return nil // can return nil if filter & filters are meh ...
 }
 
-// ParseSort return []string
-func ParseSort(ksa *gokendoparser.KendoSortArray) interface{} {
+// SortParser return []string
+func SortParser(ksa *kendoparser.Sort) interface{} {
 	sorter := []string{}
 	for _, ks := range *ksa {
 		if strings.ToLower(ks.Dir) == "desc" {

@@ -4,20 +4,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/raditzlawliet/gokendoparser"
+	"github.com/raditzlawliet/kendoparser"
 	"github.com/stretchr/testify/require"
 
 	"xorm.io/builder"
 )
 
-func Test_ParseFilter(t *testing.T) {
-	kendoFilter := gokendoparser.KendoFilter{
-		Filters: []gokendoparser.KendoFilter{
-			gokendoparser.KendoFilter{Field: "_id", Operator: "eq", Value: "val"},
+func Test_FilterParser(t *testing.T) {
+	kendoFilter := kendoparser.Filter{
+		Filters: []kendoparser.Filter{
+			kendoparser.Filter{Field: "_id", Operator: "eq", Value: "val"},
 		},
 		Logic: "and",
 	}
-	resultFilter := kendoFilter.Parse(ParseFilter)
+	resultFilter := kendoFilter.Parse(FilterParser)
 	expectedFilter := builder.And(
 		builder.Eq{"_id": "val"},
 	)
@@ -26,26 +26,26 @@ func Test_ParseFilter(t *testing.T) {
 	require.Nil(t, err)
 	t.Log(sql, params)
 
-	kendoFilter = gokendoparser.KendoFilter{
-		Filters: []gokendoparser.KendoFilter{
-			gokendoparser.KendoFilter{
-				Filters: []gokendoparser.KendoFilter{
-					gokendoparser.KendoFilter{Field: "_id", Operator: "eq", Value: "val"},
-					gokendoparser.KendoFilter{Field: "_id", Operator: "neq", Value: "val"},
+	kendoFilter = kendoparser.Filter{
+		Filters: []kendoparser.Filter{
+			kendoparser.Filter{
+				Filters: []kendoparser.Filter{
+					kendoparser.Filter{Field: "_id", Operator: "eq", Value: "val"},
+					kendoparser.Filter{Field: "_id", Operator: "neq", Value: "val"},
 				},
 				Logic: "or",
 			},
-			gokendoparser.KendoFilter{
-				Filters: []gokendoparser.KendoFilter{
-					gokendoparser.KendoFilter{Field: "_id", Operator: "eq", Value: "val2"},
-					gokendoparser.KendoFilter{Field: "_id", Operator: "neq", Value: "val2"},
+			kendoparser.Filter{
+				Filters: []kendoparser.Filter{
+					kendoparser.Filter{Field: "_id", Operator: "eq", Value: "val2"},
+					kendoparser.Filter{Field: "_id", Operator: "neq", Value: "val2"},
 				},
 				Logic: "or",
 			},
 		},
 		Logic: "and",
 	}
-	resultFilter = kendoFilter.Parse(ParseFilter)
+	resultFilter = kendoFilter.Parse(FilterParser)
 
 	expectedFilter = builder.And(
 		builder.Or(
@@ -63,21 +63,21 @@ func Test_ParseFilter(t *testing.T) {
 	t.Log(sql, params)
 
 	// // operator check
-	// kendoFilter = gokendoparser.KendoFilter{
-	// 	Filters: []gokendoparser.KendoFilter{
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "eq", Value: "val"},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "neq", Value: "val"},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "contains", Value: "val"},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "in", Values: []interface{}{"val"}},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "gte", Value: "val"},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "lte", Value: "val"},
-	// 		gokendoparser.KendoFilter{Field: "time", Operator: "gtedate", Value: "2006-01-02T15:04:05Z07:00"},
-	// 		gokendoparser.KendoFilter{Field: "time", Operator: "ltedate", Value: "2006-01-02T15:04:05Z07:00"},
-	// 		gokendoparser.KendoFilter{Field: "_id", Operator: "unknown", Value: "val"},
+	// kendoFilter = kendoparser.Filter{
+	// 	Filters: []kendoparser.Filter{
+	// 		kendoparser.Filter{Field: "_id", Operator: "eq", Value: "val"},
+	// 		kendoparser.Filter{Field: "_id", Operator: "neq", Value: "val"},
+	// 		kendoparser.Filter{Field: "_id", Operator: "contains", Value: "val"},
+	// 		kendoparser.Filter{Field: "_id", Operator: "in", Values: []interface{}{"val"}},
+	// 		kendoparser.Filter{Field: "_id", Operator: "gte", Value: "val"},
+	// 		kendoparser.Filter{Field: "_id", Operator: "lte", Value: "val"},
+	// 		kendoparser.Filter{Field: "time", Operator: "gtedate", Value: "2006-01-02T15:04:05Z07:00"},
+	// 		kendoparser.Filter{Field: "time", Operator: "ltedate", Value: "2006-01-02T15:04:05Z07:00"},
+	// 		kendoparser.Filter{Field: "_id", Operator: "unknown", Value: "val"},
 	// 	},
 	// 	Logic: "and",
 	// }
-	// resultFilter = kendoFilter.Parse(ParseFilter).(bson.D)
+	// resultFilter = kendoFilter.Parse(FilterParser).(bson.D)
 	// testTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
 
 	// expectedFilter = bson.D{
@@ -102,19 +102,19 @@ func Test_ParseFilter(t *testing.T) {
 // 	// transform single filter
 // 	// ID => _id
 // 	{
-// 		kendoFilter := gokendoparser.KendoFilter{
-// 			Filters: []gokendoparser.KendoFilter{
-// 				gokendoparser.KendoFilter{
-// 					Filters: []gokendoparser.KendoFilter{
-// 						gokendoparser.KendoFilter{Field: "ID", Operator: "eq", Value: "val"},
-// 						gokendoparser.KendoFilter{Field: "STATUS", Operator: "eq", Value: "true"},
+// 		kendoFilter := kendoparser.Filter{
+// 			Filters: []kendoparser.Filter{
+// 				kendoparser.Filter{
+// 					Filters: []kendoparser.Filter{
+// 						kendoparser.Filter{Field: "ID", Operator: "eq", Value: "val"},
+// 						kendoparser.Filter{Field: "STATUS", Operator: "eq", Value: "true"},
 // 					},
 // 					Logic: "or",
 // 				},
-// 				gokendoparser.KendoFilter{
-// 					Filters: []gokendoparser.KendoFilter{
-// 						gokendoparser.KendoFilter{Field: "ID", Operator: "eq", Value: "val2"},
-// 						gokendoparser.KendoFilter{Field: "ID", Operator: "neq", Value: "val2"},
+// 				kendoparser.Filter{
+// 					Filters: []kendoparser.Filter{
+// 						kendoparser.Filter{Field: "ID", Operator: "eq", Value: "val2"},
+// 						kendoparser.Filter{Field: "ID", Operator: "neq", Value: "val2"},
 // 					},
 // 					Logic: "or",
 // 				},
@@ -124,18 +124,18 @@ func Test_ParseFilter(t *testing.T) {
 
 // 		// try dbox pipe
 // 		resultFilter := kendoFilter.TransformAllField(strings.ToLower).
-// 			TransformAll(func(kf *gokendoparser.KendoFilter) {
+// 			TransformAll(func(kf *kendoparser.Filter) {
 // 				if kf.Field == "id" {
 // 					kf.Field = "_id"
 // 				}
 // 			}).
-// 			BeforeParseAll(func(kf *gokendoparser.KendoFilter) interface{} {
+// 			AddAllParser(func(kf *kendoparser.Filter) interface{} {
 // 				if kf.Field == "status" {
 // 					// return your custom handler
 // 					return bson.M{kf.Field: helper.StringToBool(kf.Value, false)}
 // 				}
 // 				return nil // pas nil to continue original filter
-// 			}).Parse(ParseFilter).(bson.D)
+// 			}).Parse(FilterParser).(bson.D)
 
 // 		expectedFilter := bson.D{
 // 			{
@@ -158,17 +158,17 @@ func Test_ParseFilter(t *testing.T) {
 
 func Test_Sort(t *testing.T) {
 	{
-		kData := gokendoparser.KendoData{
-			Sort: gokendoparser.KendoSortArray{
-				gokendoparser.KendoSort{
+		kData := kendoparser.Data{
+			Sort: kendoparser.Sort{
+				kendoparser.SortDetail{
 					Field: "foo",
 					Dir:   "DESC",
 				},
-				gokendoparser.KendoSort{
+				kendoparser.SortDetail{
 					Field: "bar",
 					Dir:   "ASC",
 				},
-				gokendoparser.KendoSort{
+				kendoparser.SortDetail{
 					Field: "_id",
 					Dir:   "desc",
 				},
@@ -176,7 +176,7 @@ func Test_Sort(t *testing.T) {
 		}
 
 		// try dbox filter
-		result := kData.Sort.Parse(ParseSort)
+		result := kData.Sort.Parse(SortParser)
 		expectedPipe := strings.Join([]string{
 			"foo DESC", "bar ASC", "_id DESC",
 		}, ", ")

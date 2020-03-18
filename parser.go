@@ -1,14 +1,7 @@
-package gokendoparser
+package kendoparser
 
-// [Deprecated], use directly instead
-// // Parser Parser
-// type Parser interface {
-// 	ParseFilter(kf *KendoFilter) interface{}
-// 	ParserSort(ksa *KendoSortArray) interface{}
-// }
+// FilterParser FilterParser
+type FilterParser func(f *Filter) interface{}
 
-// ParseFilter ParseFilter
-type ParseFilter func(kf *KendoFilter) interface{}
-
-// ParseSort ParseSort
-type ParseSort func(ksa *KendoSortArray) interface{}
+// SortParser SortParser
+type SortParser func(s *Sort) interface{}

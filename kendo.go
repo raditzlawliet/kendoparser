@@ -1,4 +1,4 @@
-package gokendoparser
+package kendoparser
 
 /*
  * @Author
@@ -7,28 +7,22 @@ package gokendoparser
 
 // KendoRequest option variable to struct (each apps has different format, defined/extend yourself if needed)
 type KendoRequest struct {
-	Data KendoData `json:"data"`
+	Data Data `json:"data"`
 }
 
-// RegisterOperatorAll register operator local scope include childs
-func (k *KendoRequest) RegisterOperatorAll(f Operator, ops ...string) *KendoRequest {
-	k.Data.Filter.RegisterOperatorAll(f, ops...)
-	return k
+// Data Kendo DataSource payload
+type Data struct {
+	Filter   Filter `json:"filter"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+	Skip     int    `json:"skip"`
+	Take     int    `json:"take"`
+	Sort     Sort   `json:"sort"`
 }
 
-// KendoData datasource payload
-type KendoData struct {
-	Filter   KendoFilter    `json:"filter"`
-	Page     int            `json:"page"`
-	PageSize int            `json:"pageSize"`
-	Skip     int            `json:"skip"`
-	Take     int            `json:"take"`
-	Sort     KendoSortArray `json:"sort"`
-}
-
-// KendoFilter struct filters
-type KendoFilter struct {
-	Filters    []KendoFilter `json:"filters"`
+// Filter struct filters
+type Filter struct {
+	Filters    []Filter      `json:"filters"`
 	Logic      string        `json:"logic"`
 	Field      string        `json:"field"`
 	Operator   string        `json:"operator"`
@@ -36,135 +30,112 @@ type KendoFilter struct {
 	Value      interface{}   `json:"value"`
 	Values     []interface{} `json:"values"`
 
-	// will not change the original value
-	registeredOperators map[string]Operator
-	// for extension
-	preParser []ParseFilter
+	// logic pre-parser
+	additionalParsers []FilterParser
+	operatorManager   *OperatorManager
 }
 
-// GetRegisteredOperators GetRegisteredOperators
-func (kf *KendoFilter) GetRegisteredOperators() map[string]Operator {
-	return kf.registeredOperators
+// AdditionalParsers AdditionalParsers
+func (f *Filter) AdditionalParsers() []FilterParser {
+	return f.additionalParsers
 }
 
-// AddRegisteredOperator AddRegisteredOperator
-func (kf *KendoFilter) AddRegisteredOperator(k string, op Operator) *KendoFilter {
-	if kf.registeredOperators == nil {
-		kf.registeredOperators = map[string]Operator{}
+// SetOperatorManager scoped Operator Manager
+func (f *Filter) SetOperatorManager(om *OperatorManager) *Filter {
+	f.operatorManager = om
+	for i := range f.Filters {
+		f.Filters[i].SetOperatorManager(om)
 	}
-	if op != nil {
-		kf.registeredOperators[k] = op
-	}
-	return kf
+	return f
 }
 
-// GetBeforeParse GetBeforeParse
-func (kf *KendoFilter) GetBeforeParse() []ParseFilter {
-	return kf.preParser
+// GetOperatorManager scoped Operator Manager
+func (f *Filter) GetOperatorManager() *OperatorManager {
+	return f.operatorManager
 }
 
-// BeforeParse BeforeParse
-func (kf *KendoFilter) BeforeParse(fs ...ParseFilter) *KendoFilter {
-	if kf.preParser == nil {
-		kf.preParser = []ParseFilter{}
+// AddParser AddParser
+func (f *Filter) AddParser(parsers ...FilterParser) *Filter {
+	if f.additionalParsers == nil {
+		f.additionalParsers = []FilterParser{}
 	}
-	for _, f := range fs {
-		if f != nil {
-			kf.preParser = append(kf.preParser, f)
+	for _, parser := range parsers {
+		if parser != nil {
+			f.additionalParsers = append(f.additionalParsers, parser)
 		}
 	}
-	return kf
+	return f
 }
 
-// BeforeParseAll BeforeParseAll
-func (kf *KendoFilter) BeforeParseAll(fs ...ParseFilter) *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].BeforeParseAll(fs...)
+// AddAllParser AddAllParser
+func (f *Filter) AddAllParser(parsers ...FilterParser) *Filter {
+	for i := range f.Filters {
+		f.Filters[i].AddAllParser(parsers...)
 	}
-	kf.BeforeParse(fs...)
-	return kf
+	f.AddParser(parsers...)
+	return f
 }
 
 // Parse Parse will return interface
-func (kf *KendoFilter) Parse(f ParseFilter) interface{} {
-	return f(kf)
+func (f *Filter) Parse(parser FilterParser) interface{} {
+	return parser(f)
 }
 
-// ResetBeforeParse reset all pre-filter available
-func (kf *KendoFilter) ResetBeforeParse() *KendoFilter {
-	kf.preParser = []ParseFilter{}
-	return kf
+// ResetAdditionalParsers reset all pre-filter available
+func (f *Filter) ResetAdditionalParsers() *Filter {
+	f.additionalParsers = []FilterParser{}
+	return f
 }
 
-// ResetBeforeParseAll reset all pre-filter available
-func (kf *KendoFilter) ResetBeforeParseAll() *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].ResetBeforeParseAll()
+// ResetAllAdditionalParsers reset all pre-filter available
+func (f *Filter) ResetAllAdditionalParsers() *Filter {
+	for i := range f.Filters {
+		f.Filters[i].ResetAllAdditionalParsers()
 	}
-	kf.preParser = []ParseFilter{}
-	return kf
+	f.additionalParsers = []FilterParser{}
+	return f
 }
 
 // Transform your filter
-func (kf *KendoFilter) Transform(t func(*KendoFilter)) *KendoFilter {
-	t(kf)
-	return kf
+func (f *Filter) Transform(transform func(*Filter)) *Filter {
+	transform(f)
+	return f
 }
 
 // TransformField only transform field
-func (kf *KendoFilter) TransformField(t func(string) string) *KendoFilter {
-	kf.Field = t(kf.Field)
-	return kf
+func (f *Filter) TransformField(transform func(string) string) *Filter {
+	f.Field = transform(f.Field)
+	return f
 }
 
 // TransformAll your filter include all childs
-func (kf *KendoFilter) TransformAll(t func(*KendoFilter)) *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].TransformAll(t)
+func (f *Filter) TransformAll(transform func(*Filter)) *Filter {
+	for i := range f.Filters {
+		f.Filters[i].TransformAll(transform)
 	}
-	kf.Transform(t)
-	return kf
+	f.Transform(transform)
+	return f
 }
 
 // TransformAllField only transform field include all childs
-func (kf *KendoFilter) TransformAllField(t func(string) string) *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].TransformAllField(t)
+func (f *Filter) TransformAllField(transform func(string) string) *Filter {
+	for i := range f.Filters {
+		f.Filters[i].TransformAllField(transform)
 	}
-	kf.TransformField(t)
-	return kf
+	f.TransformField(transform)
+	return f
 }
 
-// RegisterOperator register operator local scope
-func (kf *KendoFilter) RegisterOperator(f Operator, ops ...string) *KendoFilter {
-	if kf.registeredOperators == nil {
-		kf.registeredOperators = map[string]Operator{}
-	}
-	for _, op := range ops {
-		kf.registeredOperators[op] = f
-	}
-	return kf
-}
-
-// RegisterOperatorAll register operator local scope include childs
-func (kf *KendoFilter) RegisterOperatorAll(f Operator, ops ...string) *KendoFilter {
-	for i := range kf.Filters {
-		kf.Filters[i].RegisterOperatorAll(f, ops...)
-	}
-	kf.RegisterOperator(f, ops...)
-	return kf
-}
-
-// KendoSort struct sort
-type KendoSort struct {
+// SortDetail struct sort
+type SortDetail struct {
 	Dir   string `json:"dir"`
 	Field string `json:"field"`
 }
 
-// KendoSortArray alias []KendoSort
-type KendoSortArray []KendoSort
+// Sort alias []SortDetail
+type Sort []SortDetail
 
 // Parse Parse
-func (ksa *KendoSortArray) Parse(f ParseSort) interface{} {
-	return f(ksa)
+func (s *Sort) Parse(parser SortParser) interface{} {
+	return parser(s)
 }
