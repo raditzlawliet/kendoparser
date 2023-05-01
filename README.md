@@ -1,3 +1,7 @@
+> **Warning**
+> Project will be archived as read-only. This project still can be use, But there will be no update until unknown date announcement. 
+ 
+ 
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/raditzlawliet/kendoparser.svg?label=release)
 ![Codecov](https://img.shields.io/codecov/c/github/raditzlawliet/kendoparser.svg)
 [![](https://godoc.org/github.com/raditzlawliet/kendoparser?status.svg)](http://godoc.org/github.com/raditzlawliet/kendoparser)
